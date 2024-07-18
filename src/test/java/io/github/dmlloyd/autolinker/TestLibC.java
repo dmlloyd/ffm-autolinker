@@ -9,6 +9,7 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -78,6 +79,20 @@ public final class TestLibC {
         assertThrows(UnsatisfiedLinkError.class, x::non_existent);
     }
 
+    @Test
+    public void testSomePointerStuff() {
+        LibCStuff x = autoLinker.autoLink(LibCStuff.class);
+        byte[] expected = new byte[100];
+        byte[] segArray = new byte[100];
+        MemorySegment seg = MemorySegment.ofArray(segArray);
+        x.memset(seg, 5, 100);
+        Arrays.fill(expected, (byte) 5);
+        assertArrayEquals(expected, segArray);
+        x.memset(seg, 0xaa, 100);
+        Arrays.fill(expected, (byte) 0xaa);
+        assertArrayEquals(expected, segArray);
+    }
+
     @SuppressWarnings("SpellCheckingInspection")
     interface LibCStuff {
         // useful for debugging
@@ -120,5 +135,9 @@ public final class TestLibC {
 
         @Link
         void non_existent();
+
+        @Link
+        @critical(heap = true)
+        @as(ptr) void memset(MemorySegment dest, int ch, @as(size_t) int count);
     }
 }
