@@ -1,0 +1,408 @@
+= Autolinker: A utility for easy integration with the Java FFM API
+
+image:https://img.shields.io/maven-central/v/io.github.dmlloyd.autolinker/autolinker?color=green[]
+
+== Overview
+
+The `autolinker` project provides an easy means to call foreign (a.k.a. native) functions using regular Java APIs.
+
+The Java FFM API exposes function downcalls as `MethodHandle` instances,
+which are generally difficult to work with.
+Tools like `jextract` will automate this to a degree,
+however it is difficult to produce a cross-platform library using this tool.
+
+=== Requirements
+
+This project uses the Java FFM API, which is final since Java 22.
+Therefore, Java 22 or later is required to use `autolinker`.
+
+=== Quick example
+
+To give an example of what `autolinker` does to help with this problem,
+consider a simple program that wants to call the `abs` function from `libc`.
+Using `autolinker`, one can do this:
+
+.A quick example of `autolinker` in action.
+[source,java]
+----
+import io.github.dmlloyd.autolinker.Link;
+
+public interface LibC {
+    @Link
+    int abs(int val);
+}
+
+public class Main {
+    public static void main(String[] args) {
+        LibC libc = new AutoLinker(MethodHandles.lookup()).autolink(LibC.class);
+        // now I can call any native method defined on my LibC interface!
+        int res = libc.abs(-12345);
+        System.out.printf("The result was: %d%n", res);
+    }
+}
+----
+
+== Usage
+
+The primary interface of `autolinker` is the `AutoLinker` class.
+An instance of this class must be created,
+given an instance of `MethodHandles.Lookup` which has sufficient permissions
+to define a class in the same package as the interface(s) which contain the link stubs.
+
+[source,java]
+----
+AutoLinker autoLinker = new AutoLinker(MethodHandles.lookup());
+----
+
+This instance can then be used to create linked instances of interface(s) containing link stub methods.
+
+=== Link stubs
+
+A "link stub" method is a method on an interface which is `public`, non-`static`, and is `abstract`
+(i.e. not a `default` method), and is annotated with the `@Link` annotation.
+
+=== Type equivalency
+
+Java primitive types and native (i.e. C) primitive types are not equivalent,
+despite sometimes sharing the same name.
+While Java strictly defines the size and signed-ness of its primitive types,
+the C language specification allows latitude based on the target CPU type and compiler implementation.
+Inconveniently, many libraries rely on C types, which makes portable programming more difficult.
+
+In order to mitigate this problem, `autolinker` provides two mechanisms.
+
+==== Implicit type conversion
+
+The following implicit type conversions are defined:
+
+.Implicit type conversions
+[id="implicit"]
+[cols="1,2"]
+|===
+| Java type | Native type
+
+| `boolean` | `_Bool`
+| `byte` | `signed char` / `int8_t`
+| `char` | `char16_t` / `uint16_t`
+| `short` | `int16_t`
+| `int` | `int`
+| `long` | `int64_t` / `long long`
+| `float` | `float`
+| `double`  | `double`
+| `MemorySegment` | (any pointer type)
+| Array of any primitive type | (any pointer type) footnote:heap[Primitive arrays may only be accessed by functions which are marked as <<crit,critical>>.]
+| Instance of `NativeEnum` | `int`
+| `void` | `void`
+|===
+
+==== Explicit type conversion
+
+When calling a function which accepts or returns a type for which there is no implicit conversion,
+the annotation `@Link.as` should be applied to the parameter or return type.
+
+[source,java]
+----
+import io.github.dmlloyd.autolinker.Link;
+
+import static io.github.dmlloyd.autolinker.Link.as;
+import static io.github.dmlloyd.autolinker.AsType.int_;
+
+//...
+
+@Link
+@as(int_) int rand();
+----
+
+The argument to the `@Link.as` annotation is a value of type `AsType`, which is an enumeration.
+
+.Explicit type conversions
+[id="explicit"]
+[cols="1,1,2"]
+|===
+| `AsType` value | Native type | Notes
+
+| `signed_char` | `signed char` |
+| `unsigned_char` | `unsigned char` |
+| `char_` | `char` | The signedness of `char` is not specified.
+| `int_` | `int` |
+| `unsigned_int` | `unsigned int` |
+| `long_` | `long` |
+| `unsigned_long` | `unsigned long` |
+| `long_long` | `long long` |
+| `unsigned_long_long` | `unsigned long long` |
+
+| `int8_t` | `int8_t` |
+| `uint8_t` | `uint8_t` |
+| `int16_t` | `int16_t` |
+| `uint16_t` | `uint16_t` |
+| `int32_t` | `int32_t` |
+| `uint32_t` | `uint32_t` |
+| `int64_t` | `int64_t` |
+| `uint64_t` | `uint64_t` |
+
+| `char7_t` | `char` | Only values in the range 0-127 are passed.
+
+| `char8_t` | `char8_t` (C23 or later) | This is equivalent to `unsigned char`.
+| `char16_t` | `char16_t` (C11 or later) |
+| `char32_t` | `char32_t` (C11 or later) |
+
+| `ptrdiff_t` | `ptrdiff_t` |
+| `intptr_t` | `intptr_t` |
+| `uintptr_t` | `uintptr_t` |
+| `size_t` | `size_t` |
+| `ssize_t` | `ssize_t` |
+
+| `ptr` | `void *` (or any pointer type) |
+| `void_` | none (argument or return value is dropped) |
+|===
+
+==== Signed/unsigned value handling
+
+When converting an argument or return value to a wider type,
+the signedness of the native type is what determines whether the value is sign-extended
+or zero-extended.
+
+For example, given a method parameter declaration like this:
+`@as(size_t) int foobar`,
+when the target platform uses 64 bits for `size_t`, the argument will be zero-extended
+as if it were passed through the method `Integer.toUnsignedLong(foobar)`.
+
+When converting an argument or return value to a narrower type, the value is truncated.
+This may result in a negative value when the Java type is signed,
+even if the corresponding native type is unsigned.
+
+==== Native enumerations
+
+Some types are defined in terms of constants (for example, values for `errno`).
+These constants may be the same on all platforms, or may vary.
+To help simplify mapping between named constants and their corresponding integral values,
+an interface called `NativeEnum` is provided.
+
+Any object whose class implements this interface can be specified as an argument
+in any place where an integral type can be given,
+as if the value type of the argument was Java `int` (see above for implicit conversions).
+Other integral types are supported using `@Link.as` as described above.
+This is particularly suitable for Java `enum` types.
+
+If a function is declared to return a value of a type which implements `NativeEnum`,
+then that type will be expected to provide a static method called `fromNativeCode(int)`
+which accepts an `int` and returns
+an instance of the type given for the function return value.
+
+It is the responsibility of the implementer to provide the correct mapping
+for the platform specific value of each enumeration constant.
+
+[id=crit]
+=== Critical functions
+
+The Java FFM API provides a means to indicate that a foreign function is "critical",
+meaning that it "has an extremely short running time in all cases (similar to calling an empty function), and does not call back into Java (e.g. using an upcall stub)".
+
+To indicate that a function is critical, use the `@Link.critical` annotation.
+
+.An example of calling a critical function.
+[source,java]
+----
+import io.github.dmlloyd.autolinker.Link;
+
+import static io.github.dmlloyd.autolinker.Link.critical;
+import static io.github.dmlloyd.autolinker.AsType.int_;
+
+//...
+
+@Link
+@critical
+double sin(double n);
+----
+
+Critical functions can additionally be flagged as being able to access the heap.
+This is useful for functions which manipulate heap arrays.
+
+.An example of calling a function which touches the heap.
+[source,java]
+----
+import io.github.dmlloyd.autolinker.Link;
+
+import static io.github.dmlloyd.autolinker.Link.as;
+import static io.github.dmlloyd.autolinker.Link.critical;
+import static io.github.dmlloyd.autolinker.AsType.int_;
+import static io.github.dmlloyd.autolinker.AsType.ptr;
+import static io.github.dmlloyd.autolinker.AsType.size_t;
+
+//...
+
+@Link
+// we want to access the heap.
+@critical(heap = true)
+// memset normally returns `void *` but we want to ignore the return value.
+@as(ptr) void memset(byte[] buf, @as(int_) char c, @as(size_t) int count);
+----
+
+=== Call state capturing functions
+
+Functions may return a value into an auxiliary location, such as `errno`.
+When using the Java FFM API, this is done by storing the call result into
+a buffer which is passed in to the function handle.
+
+This can be similarly achieved with `autolinker` by using the `@Link.capture` annotation.
+
+.An example of a function call which captures `errno`.
+[source,java]
+----
+import io.github.dmlloyd.autolinker.Link;
+
+import static io.github.dmlloyd.autolinker.Link.as;
+import static io.github.dmlloyd.autolinker.Link.capture;
+import static io.github.dmlloyd.autolinker.AsType.size_t;
+import static io.github.dmlloyd.autolinker.AsType.ssize_t;
+
+public interface Io {
+    //...
+
+    @Link
+    @capture("errno")
+    @as(ssize_t) int read(MemorySegment state, int fd, MemorySegment buf, @as(size_t) int count);
+
+    //...
+}
+----
+
+When the call returns, the captured call state is stored in the memory segment identified by `state`.
+It can be accessed like this:
+
+.An example of accessing a captured call state value.
+[source,java]
+----
+
+static final VarHandle handle = Linker.Option.captureStateLayout()
+        .varHandle(MemoryLayout.PathElement.groupElement("errno"));
+
+public static void main(String[] args) {
+    AutoLinker autoLinker = new AutoLinker(MethodHandles.lookup());
+    Io io = autoLinker.autolink(Io.class);
+    // ...
+    int res = io.read(state, fd, buf, cnt);
+    // now get the error code out of `state`
+    int errno = (int) handle.get(state);
+    // ...
+}
+
+----
+
+
+=== Alternative link names
+
+Sometimes it is desirable for the method name to differ from the function name.
+In these cases, a `name` argument may be given to `@Link`,
+giving the alternative name.
+
+.An example of alternative link name usage.
+[source,java]
+----
+// ...
+
+@Link
+int rand();
+
+@Link(name = "rand")
+@as(int_) short rand_as_short();
+----
+
+In the above example, the method `rand_as_short()` calls the native function `rand()`
+and truncates the result to a 16-bit signed integer (`short`).
+
+=== Variadic functions
+
+When a function is variadic, it is necessary to tell the linker which argument
+is the first variadic argument.
+This may be done with the `@Link.va_start` annotation.
+
+.An example of calling variadic functions with overloads.
+[source,java]
+----
+import static io.github.dmlloyd.autolinker.Link.as;
+import static io.github.dmlloyd.autolinker.Link.critical;
+import static io.github.dmlloyd.autolinker.Link.va_start;
+import static io.github.dmlloyd.autolinker.AsType.int_;
+
+//...
+
+@Link
+@critical(heap = true)
+void printf(byte[] buf, @va_start @as(int_) int value);
+
+@Link
+@critical(heap = true)
+void printf(byte[] buf, @va_start float value);
+----
+
+=== Cross-platform usage
+
+In some cases, the name and signature for a given function ends up being
+the same across all platforms where Java runs.
+However, in some cases the names or types end up differing in an incompatible manner.
+
+One strategy to mitigate this problem is to define an alternative sub-interface for divergent platforms.
+For example, consider this interface:
+
+.An interface whose implementation would differ by platform
+[source,java]
+----
+public interface Errno {
+    @Link
+    @critical(heap = true)
+    @as(ptr) void strerror_r(int errnum, byte[] buf, @as(size_t) int bufLen);
+}
+----
+
+As it happens, `glibc` has a non-standard `strerror_r` method.
+The standard one is hidden under an alternative name, `__xpg_strerror_r`.
+
+One way to mitigate this problem is to define a sub-interface which can be chosen
+based on the platform.
+
+.An interface whose implementation would differ by platform
+[source,java]
+----
+public interface LinuxErrno extends Errno {
+    @Link(name = "__xpg_strerror_r")
+    @critical(heap = true)
+    @as(ptr) void strerror_r(int errnum, byte[] buf, @as(size_t) int bufLen);
+}
+----
+
+Then you would select the interface to auto-link based on the detected platform.
+
+.An example of selecting the interface to use by platform
+[source,java]
+----
+import io.smallrye.common.os.OS;
+// ... other imports elided ...
+
+public static void main(String[] args) {
+    // ...
+    AutoLinker autoLinker = new AutoLinker(lookup());
+    Errno errno = autoLinker.autolink(switch (OS.current()) {
+        case LINUX -> LinuxErrno.class;
+        default -> Errno.class;
+    });
+    // ...
+}
+----
+
+=== Security considerations
+
+The Java FFM API is a "restricted" API, which means that explicit permission must be granted on the command line to use it.
+The auto-linking implementation classes are defined in the same package as the interface
+which contains the link stubs.
+Therefore, the module of this package must be granted permission to access native methods.
+This can normally be achieved using the `--enable-native-access` switch.
+
+The switch accepts as an argument the name of the module which requires native access,
+or the special string `ALL-UNNAMED` to allow all classpath classes to access native methods.
+
+If you are security-conscious and choose to restrict native access only to those modules which need it,
+it is important to be aware of who can access the autolinked instances,
+as well as the autolinker itself.
+Both of these things will have privileged access to your module and the system as a whole
+so these instances should generally be kept in private or package-private fields.

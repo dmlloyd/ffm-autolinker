@@ -6,6 +6,9 @@ package io.github.dmlloyd.autolinker;
  * Otherwise, it will be directly adapted if possible.
  * Objects which implement {@link NativeEnum} will be passed as C {@code int}.
  */
+//
+// NOTE: when modifying this enum, also update README.adoc
+//
 public enum AsType {
     signed_char,
     unsigned_char,
