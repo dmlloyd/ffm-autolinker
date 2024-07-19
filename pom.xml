@@ -9,14 +9,15 @@
     <version>1.0-SNAPSHOT</version>
 
     <parent>
-        <groupId>org.jboss</groupId>
-        <artifactId>jboss-parent</artifactId>
-        <version>46</version>
+        <groupId>io.smallrye</groupId>
+        <artifactId>smallrye-build-parent</artifactId>
+        <version>45</version>
     </parent>
 
     <properties>
         <maven.compiler.release>22</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <format.skip>true</format.skip>
     </properties>
 
     <dependencyManagement>
@@ -61,6 +62,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>check-jdk</id>
@@ -111,4 +113,11 @@
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
