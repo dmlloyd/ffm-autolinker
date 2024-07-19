@@ -5,6 +5,7 @@ import io.smallrye.common.os.OS;
 /**
  * This is a very simplistic example and should not be copied in production code.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public enum Errno implements NativeEnum<Errno> {
     EDOM,
     ERANGE,
