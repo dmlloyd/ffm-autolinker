@@ -156,7 +156,7 @@ public final class AutoLinker {
     private static void processMethods(final ClassBuilder zb, final ClassDesc classDesc, final Class<?> interface_, final HashMap<String, HashSet<MethodType>> visitedMethods) {
         for (Method method : interface_.getDeclaredMethods()) {
             int mods = method.getModifiers();
-            if (Modifier.isStatic(mods) || ! Modifier.isAbstract(mods)) {
+            if (Modifier.isStatic(mods)) {
                 continue;
             }
             Link link = method.getAnnotation(Link.class);
@@ -164,33 +164,37 @@ public final class AutoLinker {
                 // just don't implement it
                 continue;
             }
-            List<Transformation> transformations = new ArrayList<>(method.getParameterCount() + 4);
-            Parameter[] parameters = method.getParameters();
-            for (final Parameter parameter : parameters) {
-                if (parameter.getAnnotation(Link.va_start.class) != null) {
-                    transformations.add(Transformation.START_VA);
-                }
-                Link.as linkAs = parameter.getAnnotation(Link.as.class);
-                if (linkAs != null) {
-                    transformations.add(transformationFor(linkAs.value()));
-                } else {
-                    // determine type
-                    transformations.add(Transformation.forJavaType(parameter.getType()));
-                }
-            }
-            Transformation returnTransformation;
-            Link.as returnLinkAs = method.getAnnotation(Link.as.class);
-            if (returnLinkAs != null) {
-                returnTransformation = transformationFor(returnLinkAs.value());
-            } else {
-                returnTransformation = Transformation.forJavaType(method.getReturnType());
-            }
-            Link.capture[] captureAnnotations = method.getAnnotationsByType(Link.capture.class);
-            Set<String> capture = captureAnnotations == null ? Set.of() : Stream.of(captureAnnotations).map(Link.capture::value).collect(Collectors.toUnmodifiableSet());
-            Link.critical critical = method.getAnnotation(Link.critical.class);
-
             MethodType type = MethodType.methodType(method.getReturnType(), method.getParameterTypes());
             if (visitedMethods.computeIfAbsent(method.getName(), AutoLinker::newHashSet).add(type)) {
+                if (! Modifier.isAbstract(mods)) {
+                    // exclude method on all levels
+                    continue;
+                }
+                List<Transformation> transformations = new ArrayList<>(method.getParameterCount() + 4);
+                Parameter[] parameters = method.getParameters();
+                for (final Parameter parameter : parameters) {
+                    if (parameter.getAnnotation(Link.va_start.class) != null) {
+                        transformations.add(Transformation.START_VA);
+                    }
+                    Link.as linkAs = parameter.getAnnotation(Link.as.class);
+                    if (linkAs != null) {
+                        transformations.add(transformationFor(linkAs.value()));
+                    } else {
+                        // determine type
+                        transformations.add(Transformation.forJavaType(parameter.getType()));
+                    }
+                }
+                Transformation returnTransformation;
+                Link.as returnLinkAs = method.getAnnotation(Link.as.class);
+                if (returnLinkAs != null) {
+                    returnTransformation = transformationFor(returnLinkAs.value());
+                } else {
+                    returnTransformation = Transformation.forJavaType(method.getReturnType());
+                }
+                Link.capture[] captureAnnotations = method.getAnnotationsByType(Link.capture.class);
+                Set<String> capture = captureAnnotations == null ? Set.of() : Stream.of(captureAnnotations).map(Link.capture::value).collect(Collectors.toUnmodifiableSet());
+                Link.critical critical = method.getAnnotation(Link.critical.class);
+
                 // add the bootstrap for the indy
                 int hash = type.hashCode();
                 String linkName = method.getName() + "$$link_" + Integer.toHexString(hash);
