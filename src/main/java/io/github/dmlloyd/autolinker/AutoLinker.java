@@ -55,10 +55,11 @@ import io.smallrye.common.os.OS;
  */
 public final class AutoLinker {
     private final MethodHandles.Lookup lookup;
-    private final ClassDesc classDesc;
     private final ClassValue<Object> linkables = new ClassValue<Object>() {
         protected Object computeValue(final Class<?> type) {
-            byte[] bytes = compileAutoLinkerFor(type, classDesc);
+            String packageName = type.getPackageName();
+            String simpleName = type.getSimpleName();
+            byte[] bytes = compileAutoLinkerFor(type, ClassDesc.of(packageName, simpleName + "$$AutoLinker"));
             try {
                 MethodHandles.Lookup definedLookup = lookup.defineHiddenClass(bytes, true);
                 MethodHandle ctor = definedLookup.findConstructor(definedLookup.lookupClass(), MethodType.methodType(void.class));
@@ -86,7 +87,6 @@ public final class AutoLinker {
      */
     public AutoLinker(final MethodHandles.Lookup lookup) {
         this.lookup = Assert.checkNotNullParam("lookup", lookup);
-        this.classDesc = ClassDesc.of(lookup.lookupClass().getPackageName(), "$$AutoLinker");
     }
 
     /**
