@@ -11,6 +11,15 @@ which are generally difficult to work with.
 Tools like `jextract` will automate this to a degree,
 however it is difficult to produce a cross-platform library using this tool.
 
+=== Important note
+
+This is a library intended *only for advanced users* who are intimately familiar with C, native code, and the intricacies of ABIs and calling conventions.
+Because this library provides a way to access native code,
+just like the Java FFM API,
+it is very possible for poor usage of this library to cause major problems and malfunctions that can result in data loss or worse.
+
+*Do not use this library unless you understand and accept the risks inherent in native coding*.
+
 === Requirements
 
 This project uses the Java FFM API, which is final since Java 22.
@@ -90,7 +99,15 @@ The following implicit type conversions are defined:
 | `float` | `float`
 | `double`  | `double`
 | `MemorySegment` | (any pointer type)
-| Array of any primitive type | (any pointer type) footnote:heap[Primitive arrays may only be accessed by functions which are marked as <<crit,critical>>.]
+| `byte[]` +
+`char[]` +
+`short[]` +
+`int[]` +
+`long[]` +
+`float[]` +
+`double[]`
+| (any pointer type)
+| `String` | `const char *` (in UTF-8 encoding)
 | Instance of `NativeEnum` | `int`
 | `void` | `void`
 |===
@@ -99,19 +116,6 @@ The following implicit type conversions are defined:
 
 When calling a function which accepts or returns a type for which there is no implicit conversion,
 the annotation `@Link.as` should be applied to the parameter or return type.
-
-[source,java]
-----
-import io.github.dmlloyd.autolinker.Link;
-
-import static io.github.dmlloyd.autolinker.Link.as;
-import static io.github.dmlloyd.autolinker.AsType.int_;
-
-//...
-
-@Link
-@as(int_) int rand();
-----
 
 The argument to the `@Link.as` annotation is a value of type `AsType`, which is an enumeration.
 
@@ -156,6 +160,20 @@ The argument to the `@Link.as` annotation is a value of type `AsType`, which is 
 | `void_` | none (argument or return value is dropped) |
 |===
 
+.An example of explicit type conversion.
+[source,java]
+----
+import io.github.dmlloyd.autolinker.Link;
+
+import static io.github.dmlloyd.autolinker.Link.as;
+import static io.github.dmlloyd.autolinker.AsType.long_;
+
+//...
+
+@Link
+@as(long_) long labs(@as(long_) long n);
+----
+
 ==== Signed/unsigned value handling
 
 When converting an argument or return value to a wider type,
@@ -192,6 +210,29 @@ an instance of the type given for the function return value.
 It is the responsibility of the implementer to provide the correct mapping
 for the platform specific value of each enumeration constant.
 
+=== In/out parameters
+
+A parameter which operates on a pointer to heap data may be declared to have a direction.
+The direction declared on a parameter determines whether data needs to be copied to or from the given argument.
+
+|===
+| Name | Meaning
+| `in` | The parameter data is read by the function
+| `out` | The parameter data is written by the function
+| `in_out` | The parameter data is both read and written by the function
+|===
+
+Temporary buffers are allocated as needed to pass information between the user object and the native function.
+
+Note that <<crit_heap,critical functions which are declared to access the heap>> will automatically skip copying when passing an array argument.
+Likewise, non-pointer argument types are generally not copied regardless
+of the declared direction.
+
+Note that arguments of type `String` are _always_ copied as if the direction is `in`,
+and should be avoided in performance-sensitive code.
+
+If no copy would be needed for an argument, then the direction is ignored, and the parameter value would be treated as if it had declared a direction of `in_out` (that is, the contents referred to by the pointer could be modified).
+
 [id=crit]
 === Critical functions
 
@@ -215,8 +256,12 @@ import static io.github.dmlloyd.autolinker.AsType.int_;
 double sin(double n);
 ----
 
+[id=crit_heap]
+==== Heap access
+
 Critical functions can additionally be flagged as being able to access the heap.
-This is useful for functions which manipulate heap arrays.
+This is useful for functions which manipulate heap arrays,
+as such functions do not have to copy the array contents before or after operating on them.
 
 .An example of calling a function which touches the heap.
 [source,java]

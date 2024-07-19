@@ -2,6 +2,7 @@ package io.github.dmlloyd.autolinker;
 
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_AddressLayout;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_Linker_Option;
+import static io.github.dmlloyd.autolinker.AutoLinker.CD_MemorySegment;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfBoolean;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfDouble;
@@ -10,11 +11,14 @@ import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfInt;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfLong;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfShort;
 import static io.github.dmlloyd.autolinker.AutoLinker.MTD_Linker_Option_int;
+import static io.github.dmlloyd.autolinker.Direction.in_out;
 
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.function.Consumer;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
 import io.github.dmlloyd.classfile.TypeKind;
@@ -27,7 +31,7 @@ enum Transformation {
      * An unsigned 7-bit integer (i.e. an ASCII character).
      */
     U7(ValueLayout.JAVA_INT) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, CharType, IntType -> {
                     cb.iload(varIdx);
@@ -43,6 +47,7 @@ enum Transformation {
                 case BooleanType -> cb.iload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -70,7 +75,7 @@ enum Transformation {
      * A signed 8-bit integer.
      */
     S8(ValueLayout.JAVA_INT) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, BooleanType -> cb.iload(varIdx);
                 case ShortType, IntType -> {
@@ -84,6 +89,7 @@ enum Transformation {
                 }
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -106,7 +112,7 @@ enum Transformation {
      * An unsigned 8-bit integer.
      */
     U8(ValueLayout.JAVA_INT) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType -> {
                     cb.iload(varIdx);
@@ -126,6 +132,7 @@ enum Transformation {
                 case BooleanType -> cb.iload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -155,7 +162,7 @@ enum Transformation {
      * A signed 16-bit integer.
      */
     S16(ValueLayout.JAVA_SHORT) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, BooleanType -> cb.iload(varIdx);
                 case IntType -> {
@@ -169,6 +176,7 @@ enum Transformation {
                 }
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -196,7 +204,7 @@ enum Transformation {
      * An unsigned 16-bit integer.
      */
     U16(ValueLayout.JAVA_INT) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case CharType, BooleanType -> cb.iload(varIdx);
                 case ShortType, ByteType, IntType -> {
@@ -210,6 +218,7 @@ enum Transformation {
                 }
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -233,7 +242,7 @@ enum Transformation {
      * A signed 32-bit integer.
      */
     S32(ValueLayout.JAVA_INT) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, CharType, IntType, BooleanType -> cb.iload(varIdx);
                 case LongType -> {
@@ -242,6 +251,7 @@ enum Transformation {
                 }
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -258,7 +268,7 @@ enum Transformation {
      * An unsigned 32-bit integer.
      */
     U32(ValueLayout.JAVA_INT) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType -> {
                     cb.iload(varIdx);
@@ -275,6 +285,7 @@ enum Transformation {
                 }
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -293,7 +304,7 @@ enum Transformation {
      * A 64-bit signed integer.
      */
     S64(ValueLayout.JAVA_LONG) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, IntType, CharType, BooleanType -> {
                     cb.iload(varIdx);
@@ -302,6 +313,7 @@ enum Transformation {
                 case LongType -> cb.lload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -338,7 +350,7 @@ enum Transformation {
      * A 64-bit unsigned integer.
      */
     U64(ValueLayout.JAVA_LONG) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType -> {
                     cb.iload(varIdx);
@@ -361,6 +373,7 @@ enum Transformation {
                 case LongType -> cb.lload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -397,7 +410,7 @@ enum Transformation {
      * A 32-bit floating point value.
      */
     F32(ValueLayout.JAVA_FLOAT) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, CharType, IntType, BooleanType -> {
                     cb.iload(varIdx);
@@ -414,6 +427,7 @@ enum Transformation {
                 }
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -440,7 +454,7 @@ enum Transformation {
      * A 64-bit floating point value.
      */
     F64(ValueLayout.JAVA_DOUBLE) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, CharType, IntType, BooleanType -> {
                     cb.iload(varIdx);
@@ -457,6 +471,7 @@ enum Transformation {
                 }
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -483,41 +498,81 @@ enum Transformation {
      * A pointer (native sized).
      */
     PTR(ValueLayout.ADDRESS) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ReferenceType -> {
                     if (argType.isArray()) {
-                        switch (TypeKind.from(argType.componentType())) {
-                            case ByteType -> {
+                        Class<?> componentType = argType.componentType();
+                        if (componentType.isPrimitive()) {
+                            ClassDesc arrayType = componentType.describeConstable().orElseThrow().arrayType();
+                            if (heap) {
                                 cb.aload(varIdx);
-                                cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_byte.arrayType()), true);
+                                cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, arrayType), true);
+                            } else {
+                                cb.aload(arenaVar);
+                                if (dir == null) {
+                                    dir = in_out;
+                                }
+                                int copySlot;
+                                if (dir.in()) {
+                                    switch (TypeKind.from(componentType)) {
+                                        case ByteType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_BYTE", AutoLinker.CD_ValueLayout_OfByte);
+                                        case CharType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_CHAR", AutoLinker.CD_ValueLayout_OfChar);
+                                        case ShortType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_SHORT", AutoLinker.CD_ValueLayout_OfShort);
+                                        case IntType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_INT", AutoLinker.CD_ValueLayout_OfInt);
+                                        case LongType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_LONG", AutoLinker.CD_ValueLayout_OfLong);
+                                        case FloatType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_FLOAT", AutoLinker.CD_ValueLayout_OfFloat);
+                                        case DoubleType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_DOUBLE", AutoLinker.CD_ValueLayout_OfDouble);
+                                        default -> throw invalidArgType(this, argType);
+                                    }
+                                    cb.aload(varIdx);
+                                    cb.invokeinterface(AutoLinker.CD_SegmentAllocator, "allocateFrom", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, AutoLinker.CD_ValueLayout, arrayType));
+                                    if (dir.out()) {
+                                        cb.dup();
+                                        copySlot = cb.allocateLocal(TypeKind.ReferenceType);
+                                        cb.astore(copySlot);
+                                    } else {
+                                        copySlot = -1;
+                                    }
+                                } else {
+                                    copySlot = -1;
+
+                                }
+                                if (dir.out()) {
+                                    return xb -> {
+                                        // copy back into the original array
+                                        xb.aload(copySlot);
+                                        xb.lconst_0();
+                                        xb.aload(varIdx);
+                                        xb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, arrayType), true);
+                                        xb.lconst_0();
+                                        xb.aload(varIdx);
+                                        xb.arraylength();
+                                        xb.i2l();
+                                        xb.invokestatic(AutoLinker.CD_MemorySegment, "copy", MethodTypeDesc.of(ConstantDescs.CD_void, CD_MemorySegment, ConstantDescs.CD_long, CD_MemorySegment, ConstantDescs.CD_long, ConstantDescs.CD_long));
+                                    };
+                                }
                             }
-                            case CharType -> {
-                                cb.aload(varIdx);
-                                cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_char.arrayType()), true);
-                            }
-                            case ShortType -> {
-                                cb.aload(varIdx);
-                                cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_short.arrayType()), true);
-                            }
-                            case IntType -> {
-                                cb.aload(varIdx);
-                                cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_int.arrayType()), true);
-                            }
-                            case LongType -> {
-                                cb.aload(varIdx);
-                                cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_long.arrayType()), true);
-                            }
-                            case FloatType -> {
-                                cb.aload(varIdx);
-                                cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_float.arrayType()), true);
-                            }
-                            case DoubleType -> {
-                                cb.aload(varIdx);
-                                cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_double.arrayType()), true);
-                            }
+                        } else {
+                            // todo: other structure types and arrays of structure types
+                            throw invalidArgType(this, argType);
+                        }
+                    } else if (argType.isPrimitive()) {
+                        // pass the value by reference to a temp allocation
+                        cb.aload(arenaVar);
+                        TypeKind tk = TypeKind.from(argType);
+                        switch (tk) {
+                            case ByteType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_BYTE", AutoLinker.CD_ValueLayout_OfByte);
+                            case CharType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_CHAR", AutoLinker.CD_ValueLayout_OfChar);
+                            case ShortType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_SHORT", AutoLinker.CD_ValueLayout_OfShort);
+                            case IntType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_INT", AutoLinker.CD_ValueLayout_OfInt);
+                            case LongType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_LONG", AutoLinker.CD_ValueLayout_OfLong);
+                            case FloatType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_FLOAT", AutoLinker.CD_ValueLayout_OfFloat);
+                            case DoubleType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_DOUBLE", AutoLinker.CD_ValueLayout_OfDouble);
                             default -> throw invalidArgType(this, argType);
                         }
+                        cb.loadLocal(tk, varIdx);
+                        cb.invokeinterface(AutoLinker.CD_SegmentAllocator, "allocateFrom", MethodTypeDesc.of(CD_MemorySegment, CD_ValueLayout, argType.describeConstable().orElseThrow()));
                     } else {
                         switch (argType.getName()) {
                             case "java.lang.foreign.MemorySegment" -> cb.aload(varIdx);
@@ -525,12 +580,32 @@ enum Transformation {
                                 cb.aload(varIdx);
                                 cb.invokestatic(AutoLinker.CD_MemorySegment, "ofBuffer", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, AutoLinker.CD_Buffer), true);
                             }
+                            case "java.lang.String" -> {
+                                if (heap) {
+                                    // use a heap buffer to avoid native allocations
+                                    cb.aload(varIdx);
+                                    cb.getstatic(AutoLinker.CD_StandardCharsets, "UTF_8", AutoLinker.CD_Charset);
+                                    cb.invokevirtual(ConstantDescs.CD_String, "getBytes", MethodTypeDesc.of(ConstantDescs.CD_byte.arrayType(), AutoLinker.CD_Charset));
+                                    cb.invokestatic(AutoLinker.CD_MemorySegment, "ofArray", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_byte.arrayType()), true);
+                                } else {
+                                    cb.aload(arenaVar);
+                                    cb.aload(varIdx);
+                                    cb.getstatic(AutoLinker.CD_StandardCharsets, "UTF_8", AutoLinker.CD_Charset);
+                                    cb.invokeinterface(AutoLinker.CD_SegmentAllocator, "allocateFrom", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, ConstantDescs.CD_String, AutoLinker.CD_Charset));
+                                }
+                            }
+                            // todo: other structure types
                             default -> throw invalidArgType(this, argType);
                         }
                     }
                 }
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
+        }
+
+        public boolean needsArena(final Class<?> argType, final boolean heap) {
+            return argType == String.class || argType.isArray() && ! heap || argType.isPrimitive();
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -555,11 +630,12 @@ enum Transformation {
      * A boolean value (i.e. C's {@code _Bool} type).
      */
     BOOL(ValueLayout.JAVA_BOOLEAN) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case BooleanType -> cb.iload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -578,8 +654,9 @@ enum Transformation {
      * A {@code void} return type or an argument to drop.
      */
     VOID(null) {
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             // drop this argument
+            return null;
         }
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
@@ -625,8 +702,9 @@ enum Transformation {
             return true;
         }
 
-        public void applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType) {
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             // no arguments consumed
+            return null;
         }
 
         public boolean hasLayout() {
@@ -662,7 +740,7 @@ enum Transformation {
             case LongType -> S64;
             case DoubleType -> F64;
             case ReferenceType -> {
-                if (type.isArray() || type == MemorySegment.class) {
+                if (type.isArray() || type == MemorySegment.class || type == String.class) {
                     yield PTR;
                 } else if (NativeEnum.class.isAssignableFrom(type)) {
                     yield S32;
@@ -686,11 +764,15 @@ enum Transformation {
     /**
      * Apply the argument for this transformation into a call which is being built.
      *
-     * @param cb      the code builder (not {@code null})
-     * @param varIdx  the argument's variable slot index
-     * @param argType the type of the argument (not {@code null})
+     * @param cb       the code builder (not {@code null})
+     * @param varIdx   the argument's variable slot index
+     * @param argType  the type of the argument (not {@code null})
+     * @param heap     {@code true} if heap access is available, or {@code false} if it is not
+     * @param arenaVar the variable index of the allocation arena, or {@code -1} if there is none
+     * @param dir
+     * @return a post-call cleanup action to take, or {@code null} if none is needed
      */
-    public void applyArgument(CodeBuilder cb, final int varIdx, final Class<?> argType) {
+    public Consumer<CodeBuilder> applyArgument(CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
         throw new IllegalArgumentException("This type cannot be used as an argument type");
     }
 
@@ -740,6 +822,13 @@ enum Transformation {
      * {@return <code>true</code> if this transformation emits an option}
      */
     public boolean hasOption() {
+        return false;
+    }
+
+    /**
+     * {@return <code>true</code> if this transformation requires an allocation arena}
+     */
+    public boolean needsArena(final Class<?> argType, boolean heap) {
         return false;
     }
 }

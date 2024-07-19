@@ -63,6 +63,15 @@ public final class TestLibC {
     }
 
     @Test
+    public void testString() {
+        LibCStuff x = autoLinker.autoLink(LibCStuff.class);
+        assertEquals(1234, x.atoi("1234"));
+        assertEquals(0, x.atoi("nonsense"));
+        assertEquals(1234, x.atoi_crit("1234"));
+        assertEquals(0, x.atoi_crit("nonsense"));
+    }
+
+    @Test
     @Disabled("FFM presently disallows critical+capture")
     public void testCriticalWithCaptureErrno() {
         LibCStuff x = autoLinker.autoLink(LibCStuff.class);
@@ -127,6 +136,13 @@ public final class TestLibC {
         @Link(name = "atoi")
         @critical(heap = true)
         @as(unsigned_int) long atoi_as_unsigned(byte[] str, @as(void_) boolean ignore);
+
+        @Link
+        int atoi(String str);
+
+        @Link(name = "atoi")
+        @critical(heap = true)
+        int atoi_crit(String str);
 
         @Link
         @critical
