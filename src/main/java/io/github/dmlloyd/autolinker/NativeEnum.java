@@ -24,7 +24,7 @@ package io.github.dmlloyd.autolinker;
  *           methods
  */
 @FunctionalInterface
-public interface NativeEnum<T> {
+public interface NativeEnum<T extends NativeEnum<T>> {
     /**
      * {@return the native integer value corresponding to this object}
      * It is the responsibility of the implementer to ensure that the value is correct
@@ -152,7 +152,7 @@ public interface NativeEnum<T> {
      * @param <T> the enumeration type
      */
     @SafeVarargs
-    static <T> NativeEnum<T> andAll(NativeEnum<T>... vals) {
+    static <T extends NativeEnum<T>> NativeEnum<T> andAll(NativeEnum<T>... vals) {
         return () -> {
             int length = vals.length;
             if (length == 0) {
@@ -172,7 +172,7 @@ public interface NativeEnum<T> {
      * @param <T> the enumeration type
      */
     @SafeVarargs
-    static <T> NativeEnum<T> orAll(NativeEnum<T>... vals) {
+    static <T extends NativeEnum<T>> NativeEnum<T> orAll(NativeEnum<T>... vals) {
         return () -> {
             int length = vals.length;
             if (length == 0) {
@@ -192,7 +192,7 @@ public interface NativeEnum<T> {
      * @param <T> the enumeration type
      */
     @SafeVarargs
-    static <T> NativeEnum<T> xorAll(NativeEnum<T>... vals) {
+    static <T extends NativeEnum<T>> NativeEnum<T> xorAll(NativeEnum<T>... vals) {
         return () -> {
             int length = vals.length;
             if (length == 0) {
@@ -213,7 +213,7 @@ public interface NativeEnum<T> {
      * @return the instance (not {@code null})
      * @param <T> the type
      */
-    static <T> NativeEnum<T> fromNativeCode(int value) {
+    static <T extends NativeEnum<T>> NativeEnum<T> fromNativeCode(int value) {
         return () -> value;
     }
 
@@ -224,7 +224,7 @@ public interface NativeEnum<T> {
      * @return the instance (not {@code null})
      * @param <T> the type
      */
-    static <T> T fromNativeCode(Class<T> implClass, int value) {
+    static <T extends NativeEnum<T>> T fromNativeCode(Class<T> implClass, int value) {
         return Util.nativeEnumFactory(implClass).apply(value);
     }
 }

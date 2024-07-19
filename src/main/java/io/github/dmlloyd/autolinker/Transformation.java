@@ -680,21 +680,7 @@ enum Transformation {
      */
     START_VA(null) {
         public void applyOption(final CodeBuilder cb, final int argIdx) {
-            switch (argIdx) {
-                case 0 -> cb.iconst_0();
-                case 1 -> cb.iconst_1();
-                case 2 -> cb.iconst_2();
-                case 3 -> cb.iconst_3();
-                case 4 -> cb.iconst_4();
-                case 5 -> cb.iconst_5();
-                default -> {
-                    if (argIdx < 128) {
-                        cb.bipush(argIdx);
-                    } else {
-                        cb.sipush(argIdx);
-                    }
-                }
-            }
+            AutoLinker.pushInt(cb, argIdx);
             cb.invokestatic(CD_Linker_Option, "firstVariadicArg", MTD_Linker_Option_int, true);
         }
 

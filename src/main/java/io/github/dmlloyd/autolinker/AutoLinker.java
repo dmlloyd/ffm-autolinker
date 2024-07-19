@@ -365,7 +365,11 @@ public final class AutoLinker {
                             int paramSlot = cb.parameterSlot(i);
                             if (isNativeEnum) {
                                 cb.aload(paramSlot);
-                                cb.invokevirtual(argType.describeConstable().orElseThrow(), "nativeCode", MTD_int);
+                                if (argType.isInterface()) {
+                                    cb.invokeinterface(argType.describeConstable().orElseThrow(), "nativeCode", MTD_int);
+                                } else {
+                                    cb.invokevirtual(argType.describeConstable().orElseThrow(), "nativeCode", MTD_int);
+                                }
                                 ne = cb.allocateLocal(TypeKind.IntType);
                                 cb.istore(ne);
                             }
@@ -408,7 +412,7 @@ public final class AutoLinker {
                         Class<?> returnType = method.getReturnType();
                         if (NativeEnum.class.isAssignableFrom(returnType)) {
                             returnTransformation.emitReturn(cb, int.class);
-                            cb.invokestatic(returnType.describeConstable().orElseThrow(), "fromNativeCode", MethodTypeDesc.of(returnType.describeConstable().orElseThrow(), ConstantDescs.CD_int));
+                            cb.invokestatic(returnType.describeConstable().orElseThrow(), "fromNativeCode", MethodTypeDesc.of(returnType.describeConstable().orElseThrow(), ConstantDescs.CD_int), returnType.isInterface());
                         } else {
                             returnTransformation.emitReturn(cb, returnType);
                         }
@@ -435,7 +439,7 @@ public final class AutoLinker {
         }
     }
 
-    private static void pushInt(CodeBuilder cb, int val) {
+    static void pushInt(CodeBuilder cb, int val) {
         switch (val) {
             case -1 -> cb.iconst_m1();
             case 0 -> cb.iconst_0();

@@ -102,6 +102,16 @@ public final class TestLibC {
         assertArrayEquals(expected, segArray);
     }
 
+    @Test
+    public void testNativeEnums() {
+        LibCStuff x = autoLinker.autoLink(LibCStuff.class);
+        // this weird test just passes the value through
+        assertEquals(Errno.EDOM, x.abs(Errno.EDOM));
+        assertEquals(Errno.EDOM, x.abs((NativeEnum<Errno>) Errno.EDOM).as(Errno.class));
+        assertEquals(Errno.ERANGE, x.abs(Errno.ERANGE));
+        assertEquals(Errno.ERANGE, x.abs((NativeEnum<Errno>) Errno.ERANGE).as(Errno.class));
+    }
+
     @SuppressWarnings("SpellCheckingInspection")
     interface LibCStuff {
         // useful for debugging
@@ -118,6 +128,16 @@ public final class TestLibC {
         @Link
         @critical
         int abs(int n);
+
+        @Link
+        @critical
+        // another bad example, just here to test stuff
+        Errno abs(Errno n);
+
+        @Link
+        @critical
+        // another bad example, just here to test stuff
+        NativeEnum<Errno> abs(NativeEnum<Errno> n);
 
         @Link
         @as(int_) short abs(@as(int_) short n);
