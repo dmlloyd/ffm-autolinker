@@ -4,7 +4,7 @@ image:https://img.shields.io/maven-central/v/io.github.dmlloyd.autolinker/ffm-au
 
 == Overview
 
-The `autolinker` project provides an easy means to call foreign (a.k.a. native) functions using regular Java APIs.
+The `ffm-autolinker` project provides an easy means to call foreign (a.k.a. native) functions using regular Java APIs.
 
 The Java FFM API exposes function downcalls as `MethodHandle` instances,
 which are generally difficult to work with.
@@ -23,15 +23,15 @@ it is very possible for poor usage of this library to cause major problems and m
 === Requirements
 
 This project uses the Java FFM API, which is final since Java 22.
-Therefore, Java 22 or later is required to use `autolinker`.
+Therefore, Java 22 or later is required to use `ffm-autolinker`.
 
 === Quick example
 
-To give an example of what `autolinker` does to help with this problem,
+To give an example of what `ffm-autolinker` does to help with this problem,
 consider a simple program that wants to call the `abs` function from `libc`.
-Using `autolinker`, one can do this:
+Using `ffm-autolinker`, one can do this:
 
-.A quick example of `autolinker` in action.
+.A quick example of `ffm-autolinker` in action.
 [source,java]
 ----
 import io.github.dmlloyd.autolinker.Link;
@@ -53,7 +53,7 @@ public class Main {
 
 == Usage
 
-The primary interface of `autolinker` is the `AutoLinker` class.
+The primary interface of `ffm-autolinker` is the `ffm-autolinker` class.
 An instance of this class must be created,
 given an instance of `MethodHandles.Lookup` which has sufficient permissions
 to define a class in the same package as the interface(s) which contain the link stubs.
@@ -78,7 +78,7 @@ While Java strictly defines the size and signed-ness of its primitive types,
 the C language specification allows latitude based on the target CPU type and compiler implementation.
 Inconveniently, many libraries rely on C types, which makes portable programming more difficult.
 
-In order to mitigate this problem, `autolinker` provides two mechanisms.
+In order to mitigate this problem, `ffm-autolinker` provides two mechanisms.
 
 ==== Implicit type conversion
 
@@ -289,7 +289,7 @@ Functions may return a value into an auxiliary location, such as `errno`.
 When using the Java FFM API, this is done by storing the call result into
 a buffer which is passed in to the function handle.
 
-This can be similarly achieved with `autolinker` by using the `@Link.capture` annotation.
+This can be similarly achieved with `ffm-autolinker` by using the `@Link.capture` annotation.
 
 .An example of a function call which captures `errno`.
 [source,java]
