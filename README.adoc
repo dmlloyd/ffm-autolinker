@@ -1,6 +1,6 @@
-= Autolinker: A utility for easy integration with the Java FFM API
+= FFM Autolinker: A utility for easy integration with the Java FFM API
 
-image:https://img.shields.io/maven-central/v/io.github.dmlloyd.autolinker/autolinker?color=green[]
+image:https://img.shields.io/maven-central/v/io.github.dmlloyd.autolinker/ffm-autolinker?color=green[]
 
 == Overview
 
