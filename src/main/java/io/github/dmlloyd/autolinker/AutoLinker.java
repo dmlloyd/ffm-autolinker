@@ -332,10 +332,19 @@ public final class AutoLinker {
                 zb.withMethod(method.getName(), type.describeConstable().orElseThrow(), ClassFile.ACC_PUBLIC | ClassFile.ACC_FINAL | ClassFile.ACC_SYNTHETIC, mb -> {
                     mb.withCode(cb -> {
                         boolean arena = false;
+                        boolean closeArena = false;
+                        int arenaIdx = -1;
                         // first, see if we need to set up an allocation arena
                         boolean heap = critical != null && critical.heap();
                         Iterator<Transformation> iterator = transformations.iterator();
-                        for (Class<?> argType : method.getParameterTypes()) {
+                        int paramCnt = method.getParameterCount();
+                        for (int i = 0; i < paramCnt; i++) {
+                            final Class<?> argType = parameters[i].getType();
+                            if (argType == Arena.class) {
+                                arena = true;
+                                arenaIdx = cb.parameterSlot(i);
+                                continue;
+                            }
                             boolean isNativeEnum = NativeEnum.class.isAssignableFrom(argType);
                             while (iterator.hasNext()) {
                                 final Transformation transformation = iterator.next();
@@ -348,8 +357,8 @@ public final class AutoLinker {
                             }
                         }
                         // set up the arena, if any
-                        int arenaIdx = -1;
-                        if (arena) {
+                        if (arena && arenaIdx == -1) {
+                            closeArena = true;
                             arenaIdx = cb.allocateLocal(TypeKind.ReferenceType);
                             cb.invokestatic(CD_Arena, "ofConfined", MTD_Arena, true);
                             cb.astore(arenaIdx);
@@ -358,12 +367,15 @@ public final class AutoLinker {
                         ArrayDeque<Consumer<CodeBuilder>> cleanups = new ArrayDeque<>();
                         // reset and begin again
                         iterator = transformations.iterator();
-                        int paramCnt = method.getParameterCount();
                         for (int i = 0; i < paramCnt; i++) {
                             Parameter parameter = parameters[i];
                             Link.dir dirAnn = parameter.getAnnotation(Link.dir.class);
                             Direction dir = dirAnn == null ? null : dirAnn.value();
                             final Class<?> argType = parameter.getType();
+                            if (argType == Arena.class) {
+                                // skip
+                                continue;
+                            }
                             boolean isNativeEnum = NativeEnum.class.isAssignableFrom(argType);
                             int ne = -1;
                             int paramSlot = cb.parameterSlot(i);
@@ -420,7 +432,7 @@ public final class AutoLinker {
                         } else {
                             returnTransformation.emitReturn(cb, returnType);
                         }
-                        if (arena) {
+                        if (closeArena) {
                             Label tryRegionEnd = cb.newBoundLabel();
                             Label catcher = cb.newLabel();
                             cb.exceptionCatch(tryRegionStart, tryRegionEnd, catcher, Optional.empty());
