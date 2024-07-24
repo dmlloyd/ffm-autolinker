@@ -33,6 +33,49 @@ public interface NativeEnum<T extends NativeEnum<T>> {
     int nativeCode();
 
     /**
+     * {@return true if this value is equal to zero, or false otherwise}
+     */
+    default boolean isZero() {
+        return nativeCode() == 0;
+    }
+
+    /**
+     * {@return true if this value is not equal to zero, or false otherwise}
+     */
+    default boolean isNonZero() {
+        return nativeCode() != 0;
+    }
+
+    /**
+     * {@return the comparison result of comparing this enum value to another, numerically}
+     * @param other the other value (must not be {@code null})
+     */
+    default int compareNumericallyTo(NativeEnum<T> other) {
+        return Integer.compare(nativeCode(), other.nativeCode());
+    }
+
+    /**
+     * {@return the bit count of this value}
+     */
+    default int bitCount() {
+        return Integer.bitCount(nativeCode());
+    }
+
+    /**
+     * {@return the lowest set bit of this native enum}
+     */
+    default NativeEnum<T> lowestOneBit() {
+        return fromNativeCode(Integer.lowestOneBit(nativeCode()));
+    }
+
+    /**
+     * {@return the highest set bit of this native enum}
+     */
+    default NativeEnum<T> highestOneBit() {
+        return fromNativeCode(Integer.highestOneBit(nativeCode()));
+    }
+
+    /**
      * {@return true if the bit(s) given in the argument are all set in this value}
      * @param a the other value
      */
@@ -60,6 +103,27 @@ public interface NativeEnum<T extends NativeEnum<T>> {
     default boolean allAreSet(NativeEnum<T> a, NativeEnum<T> b, NativeEnum<T> c) {
         int nc = a.nativeCode() | b.nativeCode() | c.nativeCode();
         return (nativeCode() & nc) == nc;
+    }
+
+    /**
+     * {@return true if the bit(s) given in the arguments are all set in this value}
+     * @param a the first other value
+     * @param b the second other value
+     */
+    default boolean anyAreSet(NativeEnum<T> a, NativeEnum<T> b) {
+        int nc = a.nativeCode() | b.nativeCode();
+        return (nativeCode() & nc) != 0;
+    }
+
+    /**
+     * {@return true if the bit(s) given in the arguments are all set in this value}
+     * @param a the first other value
+     * @param b the second other value
+     * @param c the third other value
+     */
+    default boolean anyAreSet(NativeEnum<T> a, NativeEnum<T> b, NativeEnum<T> c) {
+        int nc = a.nativeCode() | b.nativeCode() | c.nativeCode();
+        return (nativeCode() & nc) != 0;
     }
 
     /**
