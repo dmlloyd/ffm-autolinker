@@ -342,7 +342,10 @@ public final class AutoLinker {
                             final Class<?> argType = parameters[i].getType();
                             if (argType == Arena.class) {
                                 arena = true;
-                                arenaIdx = cb.parameterSlot(i);
+                                // just ignore extra arenas, I guess
+                                if (arenaIdx == -1) {
+                                    arenaIdx = cb.parameterSlot(i);
+                                }
                                 continue;
                             }
                             boolean isNativeEnum = NativeEnum.class.isAssignableFrom(argType);
