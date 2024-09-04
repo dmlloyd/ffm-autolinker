@@ -10,7 +10,9 @@ import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfFloat;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfInt;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfLong;
 import static io.github.dmlloyd.autolinker.AutoLinker.CD_ValueLayout_OfShort;
+import static io.github.dmlloyd.autolinker.AutoLinker.MTD_Linker_Option_String_array;
 import static io.github.dmlloyd.autolinker.AutoLinker.MTD_Linker_Option_int;
+import static io.github.dmlloyd.autolinker.AutoLinker.pushInt;
 import static io.github.dmlloyd.autolinker.Direction.in_out;
 
 import java.lang.constant.ClassDesc;
@@ -18,6 +20,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.reflect.Parameter;
 import java.util.function.Consumer;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
@@ -679,8 +682,8 @@ enum Transformation {
      * A marker indicating the start of variable arguments.
      */
     START_VA(null) {
-        public void applyOption(final CodeBuilder cb, final int argIdx) {
-            AutoLinker.pushInt(cb, argIdx);
+        public void applyOption(final CodeBuilder cb, final int argIdx, final Parameter param) {
+            pushInt(cb, argIdx);
             cb.invokestatic(CD_Linker_Option, "firstVariadicArg", MTD_Linker_Option_int, true);
         }
 
@@ -699,6 +702,41 @@ enum Transformation {
 
         public boolean consumeArgument() {
             return false;
+        }
+    },
+    /**
+     * Captured call state.
+     */
+    CAPTURE(ValueLayout.ADDRESS) {
+        public void applyOption(final CodeBuilder cb, final int argIdx, final Parameter param) {
+            if (argIdx != 0) {
+                throw new IllegalArgumentException("Capture must be first argument");
+            }
+            Link.capture captureAnn = param.getAnnotation(Link.capture.class);
+            String[] capture = captureAnn.value();
+            pushInt(cb, capture.length);
+            cb.anewarray(ConstantDescs.CD_String);
+            int capIdx = 0;
+            for (String cap : capture) {
+                cb.dup();
+                pushInt(cb, capIdx++);
+                cb.ldc(cap);
+                cb.aastore();
+            }
+            cb.invokestatic(CD_Linker_Option, "captureCallState", MTD_Linker_Option_String_array, true);
+        }
+
+        public boolean hasLayout() {
+            return false;
+        }
+
+        public boolean hasOption() {
+            return true;
+        }
+
+        public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
+            cb.aload(varIdx);
+            return null;
         }
     },
     ;
@@ -777,8 +815,9 @@ enum Transformation {
      *
      * @param cb     the code builder (not {@code null})
      * @param argIdx the argument index
+     * @param param
      */
-    public void applyOption(CodeBuilder cb, final int argIdx) {
+    public void applyOption(CodeBuilder cb, final int argIdx, final Parameter param) {
     }
 
     /**

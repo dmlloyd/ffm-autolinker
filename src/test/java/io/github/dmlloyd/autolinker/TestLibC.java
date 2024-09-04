@@ -72,6 +72,14 @@ public final class TestLibC {
     }
 
     @Test
+    public void testCaptureErrno() {
+        LibCStuff x = autoLinker.autoLink(LibCStuff.class);
+        try (Arena arena = Arena.ofConfined()) {
+            x.randWithErrnoForSomeReason(arena.allocate(Linker.Option.captureStateLayout()));
+        }
+    }
+
+    @Test
     @Disabled("FFM presently disallows critical+capture")
     public void testCriticalWithCaptureErrno() {
         LibCStuff x = autoLinker.autoLink(LibCStuff.class);
@@ -125,6 +133,9 @@ public final class TestLibC {
         @Link
         int rand();
 
+        @Link(name = "rand")
+        int randWithErrnoForSomeReason(@capture("errno") MemorySegment buf);
+
         @Link
         @critical
         int abs(int n);
@@ -166,8 +177,7 @@ public final class TestLibC {
 
         @Link
         @critical
-        @capture("errno")
-        double sin(MemorySegment buf, double arg);
+        double sin(@capture("errno") MemorySegment buf, double arg);
 
         @Link
         void non_existent();

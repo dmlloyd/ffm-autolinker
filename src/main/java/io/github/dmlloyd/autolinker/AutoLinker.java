@@ -35,10 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.github.dmlloyd.classfile.ClassBuilder;
 import io.github.dmlloyd.classfile.ClassFile;
@@ -176,6 +173,10 @@ public final class AutoLinker {
                     if (parameter.getAnnotation(Link.va_start.class) != null) {
                         transformations.add(Transformation.START_VA);
                     }
+                    if (parameter.getAnnotation(Link.capture.class) != null) {
+                        transformations.add(Transformation.CAPTURE);
+                        continue;
+                    }
                     Link.as linkAs = parameter.getAnnotation(Link.as.class);
                     if (linkAs != null) {
                         transformations.add(transformationFor(linkAs.value()));
@@ -191,8 +192,10 @@ public final class AutoLinker {
                 } else {
                     returnTransformation = Transformation.forJavaType(method.getReturnType());
                 }
-                Link.capture[] captureAnnotations = method.getAnnotationsByType(Link.capture.class);
-                Set<String> capture = captureAnnotations == null ? Set.of() : Stream.of(captureAnnotations).map(Link.capture::value).collect(Collectors.toUnmodifiableSet());
+                MethodTypeDesc downcallType = MethodTypeDesc.of(
+                    returnTransformation == Transformation.VOID ? ConstantDescs.CD_void : returnTransformation.layout().carrier().describeConstable().orElseThrow(),
+                    transformations.stream().map(Transformation::layout).filter(Objects::nonNull).map(ValueLayout::carrier).map(Class::describeConstable).map(Optional::orElseThrow).toArray(ClassDesc[]::new)
+                );
                 Link.critical critical = method.getAnnotation(Link.critical.class);
 
                 // add the bootstrap for the indy
@@ -235,8 +238,8 @@ public final class AutoLinker {
                                 returnTransformation.emitLayout(tb);
                             }
                             // get the function descriptor
-                            int argCnt = (int) transformations.stream().map(Transformation::layout).filter(Objects::nonNull).count();
-                            pushInt(tb, argCnt);
+                            int layoutCnt = (int) transformations.stream().filter(Transformation::hasLayout).count();
+                            pushInt(tb, layoutCnt);
                             tb.anewarray(CD_MemoryLayout);
                             int idx = 0;
                             for (Transformation transformation : transformations) {
@@ -254,7 +257,7 @@ public final class AutoLinker {
                             }
                             // stack: linker fnPtr descriptor
                             // now we just need the options
-                            int optCnt = (capture.isEmpty() ? 0 : 1) + (critical != null ? 1 : 0) + (int) transformations.stream().filter(Transformation::hasOption).count();
+                            int optCnt = (critical != null ? 1 : 0) + (int) transformations.stream().filter(Transformation::hasOption).count();
                             pushInt(tb, optCnt);
                             tb.anewarray(CD_Linker_Option);
                             idx = 0;
@@ -263,27 +266,12 @@ public final class AutoLinker {
                                 if (transformation.hasOption()) {
                                     tb.dup();
                                     pushInt(tb, idx ++);
-                                    transformation.applyOption(tb, argIdx);
+                                    transformation.applyOption(tb, argIdx, parameters[argIdx]);
                                     tb.aastore();
                                 }
                                 if (transformation.consumeArgument()) {
                                     argIdx++;
                                 }
-                            }
-                            if (! capture.isEmpty()) {
-                                tb.dup();
-                                pushInt(tb, idx ++);
-                                pushInt(tb, capture.size());
-                                tb.anewarray(ConstantDescs.CD_String);
-                                int capIdx = 0;
-                                for (String cap : capture) {
-                                    tb.dup();
-                                    pushInt(tb, capIdx++);
-                                    tb.ldc(cap);
-                                    tb.aastore();
-                                }
-                                tb.invokestatic(CD_Linker_Option, "captureCallState", MTD_Linker_Option_String_array, true);
-                                tb.aastore();
                             }
                             if (critical != null) {
                                 tb.dup();
@@ -300,6 +288,9 @@ public final class AutoLinker {
                             // finally link the function
                             tb.invokeinterface(CD_Linker, "downcallHandle", MTD_MethodHandle_MemorySegment_FunctionDescriptor_Linker_Option_array);
                             // stack: handle
+                            tb.aload(2);
+                            // stack: handle exp_type
+                            tb.invokevirtual(ConstantDescs.CD_MethodHandle, "asType", MTD_MethodHandle_MethodType);
                             // now make a constant call site for it
                             tb.new_(CD_ConstantCallSite);
                             // stack: handle ccs
@@ -419,10 +410,7 @@ public final class AutoLinker {
                                 MTD_link
                             ),
                             fnName,
-                            MethodTypeDesc.of(
-                                returnTransformation == Transformation.VOID ? ConstantDescs.CD_void : returnTransformation.layout().carrier().describeConstable().orElseThrow(),
-                                transformations.stream().map(Transformation::layout).filter(Objects::nonNull).map(ValueLayout::carrier).map(Class::describeConstable).map(Optional::orElseThrow).toArray(ClassDesc[]::new)
-                            )
+                            downcallType
                         ));
                         // apply all cleanups
                         while (! cleanups.isEmpty()) {
@@ -610,6 +598,10 @@ public final class AutoLinker {
     static final MethodTypeDesc MTD_void_MethodHandle = MethodTypeDesc.of(
         ConstantDescs.CD_void,
         ConstantDescs.CD_MethodHandle
+    );
+    static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(
+        ConstantDescs.CD_MethodHandle,
+        ConstantDescs.CD_MethodType
     );
 
     private static final Transformation c_long;

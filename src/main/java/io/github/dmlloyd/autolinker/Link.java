@@ -1,11 +1,11 @@
 package io.github.dmlloyd.autolinker;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
 
 /**
  * Autolink the annotated method.
@@ -58,27 +58,17 @@ public @interface Link {
     }
 
     /**
-     * Indicate that the method should {@linkplain Linker.Option#captureCallState(String...) capture a call state value}.
+     * Indicate that the method parameter should be used to
+     * {@linkplain Linker.Option#captureCallState(String...) capture call state value(s)}.
+     * Up to one parameter may be annotated.
+     * The type of the parameter must be {@link MemorySegment}.
      */
     @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.METHOD)
-    @Repeatable(capture.list.class)
+    @Target(ElementType.PARAMETER)
     @interface capture {
         /**
-         * {@return the call state value name}
+         * {@return the call state value names}
          */
-        String value();
-
-        /**
-         * The carrier type for multiple occurrences of {@link capture}.
-         */
-        @Retention(RetentionPolicy.RUNTIME)
-        @Target(ElementType.METHOD)
-        @interface list {
-            /**
-             * {@return the list}
-             */
-            capture[] value();
-        }
+        String[] value();
     }
 }
