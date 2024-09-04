@@ -38,18 +38,18 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType, ShortType, CharType, IntType -> {
+                case BYTE, SHORT, CHAR, INT -> {
                     cb.iload(varIdx);
                     cb.bipush(0x7f);
                     cb.iand();
                 }
-                case LongType -> {
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2i();
                     cb.bipush(0x7f);
                     cb.iand();
                 }
-                case BooleanType -> cb.iload(varIdx);
+                case BOOLEAN -> cb.iload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
             return null;
@@ -57,21 +57,21 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType, ShortType, CharType, IntType -> {
+                case BYTE, SHORT, CHAR, INT -> {
                     cb.bipush(0x7f);
                     cb.iand();
                 }
-                case LongType -> {
+                case LONG -> {
                     cb.bipush(0x7f);
                     cb.iand();
                     cb.i2l();
                 }
-                case BooleanType -> {
+                case BOOLEAN -> {
                     cb.bipush(0x7f);
                     cb.iand();
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop();
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -86,12 +86,12 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType, BooleanType -> cb.iload(varIdx);
-                case ShortType, IntType -> {
+                case BYTE, BOOLEAN -> cb.iload(varIdx);
+                case SHORT, INT -> {
                     cb.iload(varIdx);
                     cb.i2b();
                 }
-                case LongType -> {
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2i();
                     cb.i2b();
@@ -103,16 +103,16 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType, ShortType, IntType -> cb.i2b();
-                case LongType -> {
+                case BYTE, SHORT, INT -> cb.i2b();
+                case LONG -> {
                     cb.i2b();
                     cb.i2l();
                 }
-                case BooleanType -> {
+                case BOOLEAN -> {
                     cb.i2b();
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop();
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -127,22 +127,22 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType -> {
+                case BYTE -> {
                     cb.iload(varIdx);
                     cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
                 }
-                case ShortType, CharType, IntType -> {
+                case SHORT, CHAR, INT -> {
                     cb.iload(varIdx);
                     cb.i2b();
                     cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
                 }
-                case LongType -> {
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2i();
                     cb.i2b();
                     cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
                 }
-                case BooleanType -> cb.iload(varIdx);
+                case BOOLEAN -> cb.iload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
             return null;
@@ -150,23 +150,23 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType -> cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
-                case ShortType, CharType, IntType -> {
+                case BYTE -> cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
+                case SHORT, CHAR, INT -> {
                     cb.i2b();
                     cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
                 }
-                case LongType -> {
+                case LONG -> {
                     cb.i2b();
                     cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
                     // zero-extends
                     cb.i2l();
                 }
-                case BooleanType -> {
+                case BOOLEAN -> {
                     cb.i2b();
                     cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop();
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -181,12 +181,12 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType, ShortType, BooleanType -> cb.iload(varIdx);
-                case IntType -> {
+                case BYTE, SHORT, BOOLEAN -> cb.iload(varIdx);
+                case INT -> {
                     cb.iload(varIdx);
                     cb.i2s();
                 }
-                case LongType -> {
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2i();
                     cb.i2s();
@@ -198,17 +198,17 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType, ShortType -> {}
-                case IntType -> cb.i2s();
-                case LongType -> {
+                case BYTE, SHORT -> {}
+                case INT -> cb.i2s();
+                case LONG -> {
                     cb.i2s();
                     cb.i2l();
                 }
-                case BooleanType -> {
+                case BOOLEAN -> {
                     cb.i2s();
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop();
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -227,12 +227,12 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case CharType, BooleanType -> cb.iload(varIdx);
-                case ShortType, ByteType, IntType -> {
+                case CHAR, BOOLEAN -> cb.iload(varIdx);
+                case SHORT, BYTE, INT -> {
                     cb.iload(varIdx);
                     cb.i2c();
                 }
-                case LongType -> {
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2i();
                     cb.i2c();
@@ -244,17 +244,17 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType, ShortType -> {}
-                case IntType -> cb.i2c();
-                case LongType -> {
+                case BYTE, SHORT -> {}
+                case INT -> cb.i2c();
+                case LONG -> {
                     cb.i2c();
                     cb.i2l();
                 }
-                case BooleanType -> {
+                case BOOLEAN -> {
                     cb.i2c();
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop();
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -269,8 +269,8 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType, ShortType, CharType, IntType, BooleanType -> cb.iload(varIdx);
-                case LongType -> {
+                case BYTE, SHORT, CHAR, INT, BOOLEAN -> cb.iload(varIdx);
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2i();
                 }
@@ -281,10 +281,10 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType, CharType, ShortType, IntType -> {}
-                case LongType -> cb.i2l();
-                case BooleanType -> cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
-                case VoidType -> cb.pop();
+                case BYTE, CHAR, SHORT, INT -> {}
+                case LONG -> cb.i2l();
+                case BOOLEAN -> cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -299,16 +299,16 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType -> {
+                case BYTE -> {
                     cb.iload(varIdx);
                     cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
                 }
-                case ShortType -> {
+                case SHORT -> {
                     cb.iload(varIdx);
                     cb.invokestatic(ConstantDescs.CD_Short, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_short));
                 }
-                case CharType, IntType, BooleanType -> cb.iload(varIdx);
-                case LongType -> {
+                case CHAR, INT, BOOLEAN -> cb.iload(varIdx);
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2i();
                 }
@@ -319,12 +319,12 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType -> cb.i2b();
-                case IntType -> {}
-                case ShortType, CharType -> cb.i2c();
-                case LongType -> cb.invokestatic(ConstantDescs.CD_Integer, "toUnsignedLong", MethodTypeDesc.of(ConstantDescs.CD_long, ConstantDescs.CD_int));
-                case BooleanType -> cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
-                case VoidType -> cb.pop();
+                case BYTE -> cb.i2b();
+                case INT -> {}
+                case SHORT, CHAR -> cb.i2c();
+                case LONG -> cb.invokestatic(ConstantDescs.CD_Integer, "toUnsignedLong", MethodTypeDesc.of(ConstantDescs.CD_long, ConstantDescs.CD_int));
+                case BOOLEAN -> cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -339,11 +339,11 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType, ShortType, IntType, CharType, BooleanType -> {
+                case BYTE, SHORT, INT, CHAR, BOOLEAN -> {
                     cb.iload(varIdx);
                     cb.i2l();
                 }
-                case LongType -> cb.lload(varIdx);
+                case LONG -> cb.lload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
             return null;
@@ -351,26 +351,26 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType -> {
+                case BYTE -> {
                     cb.l2i();
                     cb.i2b();
                 }
-                case CharType -> {
+                case CHAR -> {
                     cb.l2i();
                     cb.i2c();
                 }
-                case ShortType -> {
+                case SHORT -> {
                     cb.l2i();
                     cb.i2s();
                 }
-                case IntType -> cb.l2i();
-                case LongType -> {}
-                case BooleanType -> {
+                case INT -> cb.l2i();
+                case LONG -> {}
+                case BOOLEAN -> {
                     cb.lconst_0();
                     cb.lcmp();
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop2();
+                case VOID -> cb.pop2();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -389,25 +389,25 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType -> {
+                case BYTE -> {
                     cb.iload(varIdx);
                     cb.invokestatic(ConstantDescs.CD_Byte, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_byte));
                     cb.i2l();
                 }
-                case ShortType -> {
+                case SHORT -> {
                     cb.iload(varIdx);
                     cb.invokestatic(ConstantDescs.CD_Short, "toUnsignedInt", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_short));
                     cb.i2l();
                 }
-                case IntType -> {
+                case INT -> {
                     cb.iload(varIdx);
                     cb.invokestatic(ConstantDescs.CD_Integer, "toUnsignedLong", MethodTypeDesc.of(ConstantDescs.CD_long, ConstantDescs.CD_int));
                 }
-                case CharType, BooleanType -> {
+                case CHAR, BOOLEAN -> {
                     cb.iload(varIdx);
                     cb.i2l();
                 }
-                case LongType -> cb.lload(varIdx);
+                case LONG -> cb.lload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
             return null;
@@ -415,26 +415,26 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ByteType -> {
+                case BYTE -> {
                     cb.l2i();
                     cb.i2b();
                 }
-                case CharType -> {
+                case CHAR -> {
                     cb.l2i();
                     cb.i2c();
                 }
-                case ShortType -> {
+                case SHORT -> {
                     cb.l2i();
                     cb.i2s();
                 }
-                case IntType -> cb.l2i();
-                case LongType -> {}
-                case BooleanType -> {
+                case INT -> cb.l2i();
+                case LONG -> {}
+                case BOOLEAN -> {
                     cb.lconst_0();
                     cb.lcmp();
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop2();
+                case VOID -> cb.pop2();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -453,16 +453,16 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType, ShortType, CharType, IntType, BooleanType -> {
+                case BYTE, SHORT, CHAR, INT, BOOLEAN -> {
                     cb.iload(varIdx);
                     cb.i2f();
                 }
-                case FloatType -> cb.fload(varIdx);
-                case DoubleType -> {
+                case FLOAT -> cb.fload(varIdx);
+                case DOUBLE -> {
                     cb.dload(varIdx);
                     cb.d2f();
                 }
-                case LongType -> {
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2f();
                 }
@@ -473,16 +473,16 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case IntType -> cb.f2i();
-                case LongType -> cb.f2l();
-                case FloatType -> {}
-                case DoubleType -> cb.f2d();
-                case BooleanType -> {
+                case INT -> cb.f2i();
+                case LONG -> cb.f2l();
+                case FLOAT -> {}
+                case DOUBLE -> cb.f2d();
+                case BOOLEAN -> {
                     cb.fconst_0();
                     cb.fcmpg();
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop();
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -501,16 +501,16 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ByteType, ShortType, CharType, IntType, BooleanType -> {
+                case BYTE, SHORT, CHAR, INT, BOOLEAN -> {
                     cb.iload(varIdx);
                     cb.i2d();
                 }
-                case FloatType -> {
+                case FLOAT -> {
                     cb.fload(varIdx);
                     cb.f2d();
                 }
-                case DoubleType -> cb.dload(varIdx);
-                case LongType -> {
+                case DOUBLE -> cb.dload(varIdx);
+                case LONG -> {
                     cb.lload(varIdx);
                     cb.l2d();
                 }
@@ -521,16 +521,16 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case IntType -> cb.d2i();
-                case LongType -> cb.d2l();
-                case FloatType -> cb.d2f();
-                case DoubleType -> {}
-                case BooleanType -> {
+                case INT -> cb.d2i();
+                case LONG -> cb.d2l();
+                case FLOAT -> cb.d2f();
+                case DOUBLE -> {}
+                case BOOLEAN -> {
                     cb.dconst_0();
                     cb.dcmpg();
                     cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
                 }
-                case VoidType -> cb.pop2();
+                case VOID -> cb.pop2();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -549,7 +549,7 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, Direction dir) {
             switch (TypeKind.from(argType)) {
-                case ReferenceType -> {
+                case REFERENCE -> {
                     if (argType.isArray()) {
                         Class<?> componentType = argType.componentType();
                         if (componentType.isPrimitive()) {
@@ -565,20 +565,20 @@ enum Transformation {
                                 int copySlot;
                                 if (dir.in()) {
                                     switch (TypeKind.from(componentType)) {
-                                        case ByteType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_BYTE", AutoLinker.CD_ValueLayout_OfByte);
-                                        case CharType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_CHAR", AutoLinker.CD_ValueLayout_OfChar);
-                                        case ShortType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_SHORT", AutoLinker.CD_ValueLayout_OfShort);
-                                        case IntType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_INT", AutoLinker.CD_ValueLayout_OfInt);
-                                        case LongType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_LONG", AutoLinker.CD_ValueLayout_OfLong);
-                                        case FloatType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_FLOAT", AutoLinker.CD_ValueLayout_OfFloat);
-                                        case DoubleType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_DOUBLE", AutoLinker.CD_ValueLayout_OfDouble);
+                                        case BYTE -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_BYTE", AutoLinker.CD_ValueLayout_OfByte);
+                                        case CHAR -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_CHAR", AutoLinker.CD_ValueLayout_OfChar);
+                                        case SHORT -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_SHORT", AutoLinker.CD_ValueLayout_OfShort);
+                                        case INT -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_INT", AutoLinker.CD_ValueLayout_OfInt);
+                                        case LONG -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_LONG", AutoLinker.CD_ValueLayout_OfLong);
+                                        case FLOAT -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_FLOAT", AutoLinker.CD_ValueLayout_OfFloat);
+                                        case DOUBLE -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_DOUBLE", AutoLinker.CD_ValueLayout_OfDouble);
                                         default -> throw invalidArgType(this, argType);
                                     }
                                     cb.aload(varIdx);
                                     cb.invokeinterface(AutoLinker.CD_SegmentAllocator, "allocateFrom", MethodTypeDesc.of(AutoLinker.CD_MemorySegment, AutoLinker.CD_ValueLayout, arrayType));
                                     if (dir.out()) {
                                         cb.dup();
-                                        copySlot = cb.allocateLocal(TypeKind.ReferenceType);
+                                        copySlot = cb.allocateLocal(TypeKind.REFERENCE);
                                         cb.astore(copySlot);
                                     } else {
                                         copySlot = -1;
@@ -611,13 +611,13 @@ enum Transformation {
                         cb.aload(arenaVar);
                         TypeKind tk = TypeKind.from(argType);
                         switch (tk) {
-                            case ByteType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_BYTE", AutoLinker.CD_ValueLayout_OfByte);
-                            case CharType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_CHAR", AutoLinker.CD_ValueLayout_OfChar);
-                            case ShortType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_SHORT", AutoLinker.CD_ValueLayout_OfShort);
-                            case IntType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_INT", AutoLinker.CD_ValueLayout_OfInt);
-                            case LongType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_LONG", AutoLinker.CD_ValueLayout_OfLong);
-                            case FloatType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_FLOAT", AutoLinker.CD_ValueLayout_OfFloat);
-                            case DoubleType -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_DOUBLE", AutoLinker.CD_ValueLayout_OfDouble);
+                            case BYTE -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_BYTE", AutoLinker.CD_ValueLayout_OfByte);
+                            case CHAR -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_CHAR", AutoLinker.CD_ValueLayout_OfChar);
+                            case SHORT -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_SHORT", AutoLinker.CD_ValueLayout_OfShort);
+                            case INT -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_INT", AutoLinker.CD_ValueLayout_OfInt);
+                            case LONG -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_LONG", AutoLinker.CD_ValueLayout_OfLong);
+                            case FLOAT -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_FLOAT", AutoLinker.CD_ValueLayout_OfFloat);
+                            case DOUBLE -> cb.getstatic(AutoLinker.CD_ValueLayout, "JAVA_DOUBLE", AutoLinker.CD_ValueLayout_OfDouble);
                             default -> throw invalidArgType(this, argType);
                         }
                         cb.loadLocal(tk, varIdx);
@@ -659,14 +659,14 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case ReferenceType -> {
+                case REFERENCE -> {
                     switch (returnType.getName()) {
                         case "java.lang.foreign.MemorySegment" -> {}
                         case "java.nio.ByteBuffer" -> cb.invokestatic(AutoLinker.CD_MemorySegment, "asByteBuffer", MethodTypeDesc.of(AutoLinker.CD_ByteBuffer), true);
                         default -> throw invalidReturnType(this, returnType);
                     }
                 }
-                case VoidType -> cb.pop();
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -685,7 +685,7 @@ enum Transformation {
 
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
-                case BooleanType -> cb.iload(varIdx);
+                case BOOLEAN -> cb.iload(varIdx);
                 default -> throw invalidArgType(this, argType);
             }
             return null;
@@ -693,8 +693,8 @@ enum Transformation {
 
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             switch (TypeKind.from(returnType)) {
-                case BooleanType -> cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
-                case VoidType -> cb.pop();
+                case BOOLEAN -> cb.ifThenElse(CodeBuilder::iconst_1, CodeBuilder::iconst_0);
+                case VOID -> cb.pop();
                 default -> throw invalidReturnType(this, returnType);
             }
         }
@@ -719,12 +719,12 @@ enum Transformation {
         public void emitReturn(final CodeBuilder cb, final Class<?> returnType) {
             TypeKind tk = TypeKind.from(returnType);
             switch (tk) {
-                case ByteType, ShortType, IntType, CharType, BooleanType -> cb.iconst_0();
-                case FloatType -> cb.fconst_0();
-                case DoubleType -> cb.dconst_0();
-                case LongType -> cb.lconst_0();
-                case ReferenceType -> cb.aconst_null();
-                case VoidType -> {}
+                case BYTE, SHORT, INT, CHAR, BOOLEAN -> cb.iconst_0();
+                case FLOAT -> cb.fconst_0();
+                case DOUBLE -> cb.dconst_0();
+                case LONG -> cb.lconst_0();
+                case REFERENCE -> cb.aconst_null();
+                case VOID -> {}
             }
         }
 
@@ -815,13 +815,13 @@ enum Transformation {
 
     static Transformation forJavaType(final Class<?> type) {
         return switch (TypeKind.from(type)) {
-            case ByteType -> S8;
-            case ShortType -> S16;
-            case IntType -> S32;
-            case FloatType -> F32;
-            case LongType -> S64;
-            case DoubleType -> F64;
-            case ReferenceType -> {
+            case BYTE -> S8;
+            case SHORT -> S16;
+            case INT -> S32;
+            case FLOAT -> F32;
+            case LONG -> S64;
+            case DOUBLE -> F64;
+            case REFERENCE -> {
                 if (type.isArray() || type == LazyLink.MEMORY_SEGMENT || type == String.class) {
                     yield PTR;
                 } else if (NativeEnum.class.isAssignableFrom(type)) {
@@ -830,9 +830,9 @@ enum Transformation {
                     throw new IllegalArgumentException("No conversion for Java type " + type);
                 }
             }
-            case CharType -> U16;
-            case BooleanType -> BOOL;
-            case VoidType -> VOID;
+            case CHAR -> U16;
+            case BOOLEAN -> BOOL;
+            case VOID -> VOID;
         };
     }
 

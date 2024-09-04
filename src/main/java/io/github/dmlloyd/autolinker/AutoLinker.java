@@ -343,7 +343,7 @@ public final class AutoLinker {
                         // set up the arena, if any
                         if (arena && arenaIdx == -1) {
                             closeArena = true;
-                            arenaIdx = cb.allocateLocal(TypeKind.ReferenceType);
+                            arenaIdx = cb.allocateLocal(TypeKind.REFERENCE);
                             cb.invokestatic(CD_Arena, "ofConfined", MTD_Arena, true);
                             cb.astore(arenaIdx);
                         }
@@ -370,7 +370,7 @@ public final class AutoLinker {
                                 } else {
                                     cb.invokevirtual(argType.describeConstable().orElseThrow(), "nativeCode", MTD_int);
                                 }
-                                ne = cb.allocateLocal(TypeKind.IntType);
+                                ne = cb.allocateLocal(TypeKind.INT);
                                 cb.istore(ne);
                             }
                             while (iterator.hasNext()) {
