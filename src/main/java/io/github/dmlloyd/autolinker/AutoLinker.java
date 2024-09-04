@@ -6,15 +6,6 @@ import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.SymbolLookup;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -33,7 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -122,10 +112,10 @@ public final class AutoLinker {
             zb.withVersion(ClassFile.JAVA_22_VERSION, 0);
             zb.withInterfaceSymbols(interface_.describeConstable().orElseThrow());
             // create trivial constructor
-            zb.withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC, mb -> {
+            zb.withMethod("<init>", MTD_void, ClassFile.ACC_PUBLIC, mb -> {
                 mb.withCode(cb -> {
                     cb.aload(0);
-                    cb.invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
+                    cb.invokespecial(ConstantDescs.CD_Object, "<init>", MTD_void);
                     cb.return_();
                 });
             });
@@ -193,8 +183,8 @@ public final class AutoLinker {
                     returnTransformation = Transformation.forJavaType(method.getReturnType());
                 }
                 MethodTypeDesc downcallType = MethodTypeDesc.of(
-                    returnTransformation == Transformation.VOID ? ConstantDescs.CD_void : returnTransformation.layout().carrier().describeConstable().orElseThrow(),
-                    transformations.stream().map(Transformation::layout).filter(Objects::nonNull).map(ValueLayout::carrier).map(Class::describeConstable).map(Optional::orElseThrow).toArray(ClassDesc[]::new)
+                    returnTransformation.carrier().describeConstable().orElseThrow(),
+                    transformations.stream().map(Transformation::carrier).filter(c -> c != void.class).map(Class::describeConstable).map(Optional::orElseThrow).toArray(ClassDesc[]::new)
                 );
                 Link.critical critical = method.getAnnotation(Link.critical.class);
 
@@ -298,7 +288,7 @@ public final class AutoLinker {
                             // stack: ccs handle ccs
                             tb.swap();
                             // stack: ccs ccs handle
-                            tb.invokespecial(CD_ConstantCallSite, ConstantDescs.INIT_NAME, MTD_void_MethodHandle);
+                            tb.invokespecial(CD_ConstantCallSite, "<init>", MTD_void_MethodHandle);
                             // stack: ccs
                             tb.areturn();
                             // stack: -- (done)
@@ -313,7 +303,7 @@ public final class AutoLinker {
                         // stack: ule
                         cb.dup();
                         // stack: ule ule
-                        cb.invokespecial(CD_UnsatisfiedLinkError, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void);
+                        cb.invokespecial(CD_UnsatisfiedLinkError, "<init>", MTD_void);
                         // stack: ule
                         cb.athrow();
                         // stack: -- (done)
@@ -331,7 +321,7 @@ public final class AutoLinker {
                         int paramCnt = method.getParameterCount();
                         for (int i = 0; i < paramCnt; i++) {
                             final Class<?> argType = parameters[i].getType();
-                            if (argType == Arena.class) {
+                            if (argType == LazyLink.ARENA) {
                                 arena = true;
                                 // just ignore extra arenas, I guess
                                 if (arenaIdx == -1) {
@@ -366,7 +356,7 @@ public final class AutoLinker {
                             Link.dir dirAnn = parameter.getAnnotation(Link.dir.class);
                             Direction dir = dirAnn == null ? null : dirAnn.value();
                             final Class<?> argType = parameter.getType();
-                            if (argType == Arena.class) {
+                            if (argType == LazyLink.ARENA) {
                                 // skip
                                 continue;
                             }
@@ -429,12 +419,12 @@ public final class AutoLinker {
                             cb.exceptionCatch(tryRegionStart, tryRegionEnd, catcher, Optional.empty());
                             // clean up arena
                             cb.aload(arenaIdx);
-                            cb.invokeinterface(CD_Arena, "close", ConstantDescs.MTD_void);
+                            cb.invokeinterface(CD_Arena, "close", MTD_void);
                             cb.return_(TypeKind.from(returnType));
                             cb.labelBinding(catcher);
                             // clean up arena (catch)
                             cb.aload(arenaIdx);
-                            cb.invokeinterface(CD_Arena, "close", ConstantDescs.MTD_void);
+                            cb.invokeinterface(CD_Arena, "close", MTD_void);
                             // rethrow the exception
                             cb.athrow();
                         } else {
@@ -508,31 +498,31 @@ public final class AutoLinker {
         };
     }
 
-    static final ClassDesc CD_AddressLayout = AddressLayout.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_Arena = Arena.class.describeConstable().orElseThrow();
+    static final ClassDesc CD_AddressLayout = ClassDesc.of("java.lang.foreign.AddressLayout");
+    static final ClassDesc CD_Arena = ClassDesc.of("java.lang.foreign.Arena");
     static final ClassDesc CD_Buffer = Buffer.class.describeConstable().orElseThrow();
     static final ClassDesc CD_ByteBuffer = ByteBuffer.class.describeConstable().orElseThrow();
     static final ClassDesc CD_Charset = Charset.class.describeConstable().orElseThrow();
     static final ClassDesc CD_ConstantCallSite = ConstantCallSite.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_FunctionDescriptor = FunctionDescriptor.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_Linker = Linker.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_Linker_Option = Linker.Option.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_Linker_Option_array = Linker.Option[].class.describeConstable().orElseThrow();
-    static final ClassDesc CD_MemoryLayout = MemoryLayout.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_MemorySegment = MemorySegment.class.describeConstable().orElseThrow();
+    static final ClassDesc CD_FunctionDescriptor = ClassDesc.of("java.lang.foreign.FunctionDescriptor");
+    static final ClassDesc CD_Linker = ClassDesc.of("java.lang.foreign.Linker");
+    static final ClassDesc CD_Linker_Option = ClassDesc.of("java.lang.foreign.Linker$Option");
+    static final ClassDesc CD_Linker_Option_array = CD_Linker_Option.arrayType();
+    static final ClassDesc CD_MemoryLayout = ClassDesc.of("java.lang.foreign.MemoryLayout");
+    static final ClassDesc CD_MemorySegment = ClassDesc.of("java.lang.foreign.MemorySegment");
     static final ClassDesc CD_Optional = Optional.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_SegmentAllocator = SegmentAllocator.class.describeConstable().orElseThrow();
+    static final ClassDesc CD_SegmentAllocator = ClassDesc.of("java.lang.foreign.SegmentAllocator");
     static final ClassDesc CD_StandardCharsets = StandardCharsets.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_SymbolLookup = SymbolLookup.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout = ValueLayout.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout_OfBoolean = ValueLayout.OfBoolean.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout_OfByte = ValueLayout.OfByte.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout_OfChar = ValueLayout.OfByte.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout_OfDouble = ValueLayout.OfDouble.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout_OfFloat = ValueLayout.OfFloat.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout_OfLong = ValueLayout.OfLong.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout_OfInt = ValueLayout.OfInt.class.describeConstable().orElseThrow();
-    static final ClassDesc CD_ValueLayout_OfShort = ValueLayout.OfShort.class.describeConstable().orElseThrow();
+    static final ClassDesc CD_SymbolLookup = ClassDesc.of("java.lang.foreign.SymbolLookup");
+    static final ClassDesc CD_ValueLayout = ClassDesc.of("java.lang.foreign.ValueLayout");
+    static final ClassDesc CD_ValueLayout_OfBoolean = ClassDesc.of("java.lang.foreign.ValueLayout$OfBoolean");
+    static final ClassDesc CD_ValueLayout_OfByte = ClassDesc.of("java.lang.foreign.ValueLayout$OfByte");
+    static final ClassDesc CD_ValueLayout_OfChar = ClassDesc.of("java.lang.foreign.ValueLayout$OfChar");
+    static final ClassDesc CD_ValueLayout_OfDouble = ClassDesc.of("java.lang.foreign.ValueLayout$OfDouble");
+    static final ClassDesc CD_ValueLayout_OfFloat = ClassDesc.of("java.lang.foreign.ValueLayout$OfFloat");
+    static final ClassDesc CD_ValueLayout_OfLong = ClassDesc.of("java.lang.foreign.ValueLayout$OfLong");
+    static final ClassDesc CD_ValueLayout_OfInt = ClassDesc.of("java.lang.foreign.ValueLayout$OfInt");
+    static final ClassDesc CD_ValueLayout_OfShort = ClassDesc.of("java.lang.foreign.ValueLayout$OfShort");
 
     static final ClassDesc CD_UnsatisfiedLinkError = UnsatisfiedLinkError.class.describeConstable().orElseThrow();
 
@@ -594,6 +584,9 @@ public final class AutoLinker {
         CD_MemorySegment,
         CD_FunctionDescriptor,
         CD_Linker_Option_array
+    );
+    static final MethodTypeDesc MTD_void = MethodTypeDesc.of(
+        ConstantDescs.CD_void
     );
     static final MethodTypeDesc MTD_void_MethodHandle = MethodTypeDesc.of(
         ConstantDescs.CD_void,

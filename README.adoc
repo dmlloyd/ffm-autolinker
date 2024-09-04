@@ -24,6 +24,7 @@ it is very possible for poor usage of this library to cause major problems and m
 
 This project uses the Java FFM API, which is final since Java 22.
 Therefore, Java 22 or later is required to use `ffm-autolinker`.
+The classes of this project target Java 17 for ease of integration.
 
 === Quick example
 

@@ -4,8 +4,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
 
 /**
  * Autolink the annotated method.
@@ -49,7 +47,7 @@ public @interface Link {
     @interface va_start {}
 
     /**
-     * Indicate that the method is {@linkplain Linker.Option#critical(boolean) critical}
+     * Indicate that the method is critical.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
@@ -59,9 +57,9 @@ public @interface Link {
 
     /**
      * Indicate that the method parameter should be used to
-     * {@linkplain Linker.Option#captureCallState(String...) capture call state value(s)}.
+     * capture call state value(s).
      * Up to one parameter may be annotated.
-     * The type of the parameter must be {@link MemorySegment}.
+     * The type of the parameter must be {@code MemorySegment}.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.PARAMETER)

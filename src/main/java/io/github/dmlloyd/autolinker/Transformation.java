@@ -18,8 +18,6 @@ import static io.github.dmlloyd.autolinker.Direction.in_out;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.lang.reflect.Parameter;
 import java.util.function.Consumer;
 
@@ -33,7 +31,11 @@ enum Transformation {
     /**
      * An unsigned 7-bit integer (i.e. an ASCII character).
      */
-    U7(ValueLayout.JAVA_INT) {
+    U7 {
+        public Class<?> carrier() {
+            return int.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, CharType, IntType -> {
@@ -77,7 +79,11 @@ enum Transformation {
     /**
      * A signed 8-bit integer.
      */
-    S8(ValueLayout.JAVA_INT) {
+    S8 {
+        public Class<?> carrier() {
+            return int.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, BooleanType -> cb.iload(varIdx);
@@ -114,7 +120,11 @@ enum Transformation {
     /**
      * An unsigned 8-bit integer.
      */
-    U8(ValueLayout.JAVA_INT) {
+    U8 {
+        public Class<?> carrier() {
+            return int.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType -> {
@@ -164,7 +174,11 @@ enum Transformation {
     /**
      * A signed 16-bit integer.
      */
-    S16(ValueLayout.JAVA_SHORT) {
+    S16 {
+        public Class<?> carrier() {
+            return short.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, BooleanType -> cb.iload(varIdx);
@@ -206,7 +220,11 @@ enum Transformation {
     /**
      * An unsigned 16-bit integer.
      */
-    U16(ValueLayout.JAVA_INT) {
+    U16 {
+        public Class<?> carrier() {
+            return int.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case CharType, BooleanType -> cb.iload(varIdx);
@@ -244,7 +262,11 @@ enum Transformation {
     /**
      * A signed 32-bit integer.
      */
-    S32(ValueLayout.JAVA_INT) {
+    S32 {
+        public Class<?> carrier() {
+            return int.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, CharType, IntType, BooleanType -> cb.iload(varIdx);
@@ -270,7 +292,11 @@ enum Transformation {
     /**
      * An unsigned 32-bit integer.
      */
-    U32(ValueLayout.JAVA_INT) {
+    U32 {
+        public Class<?> carrier() {
+            return int.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType -> {
@@ -306,7 +332,11 @@ enum Transformation {
     /**
      * A 64-bit signed integer.
      */
-    S64(ValueLayout.JAVA_LONG) {
+    S64 {
+        public Class<?> carrier() {
+            return long.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, IntType, CharType, BooleanType -> {
@@ -352,7 +382,11 @@ enum Transformation {
     /**
      * A 64-bit unsigned integer.
      */
-    U64(ValueLayout.JAVA_LONG) {
+    U64 {
+        public Class<?> carrier() {
+            return long.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType -> {
@@ -412,7 +446,11 @@ enum Transformation {
     /**
      * A 32-bit floating point value.
      */
-    F32(ValueLayout.JAVA_FLOAT) {
+    F32 {
+        public Class<?> carrier() {
+            return float.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, CharType, IntType, BooleanType -> {
@@ -456,7 +494,11 @@ enum Transformation {
     /**
      * A 64-bit floating point value.
      */
-    F64(ValueLayout.JAVA_DOUBLE) {
+    F64 {
+        public Class<?> carrier() {
+            return double.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ByteType, ShortType, CharType, IntType, BooleanType -> {
@@ -500,7 +542,11 @@ enum Transformation {
     /**
      * A pointer (native sized).
      */
-    PTR(ValueLayout.ADDRESS) {
+    PTR {
+        public Class<?> carrier() {
+            return LazyLink.MEMORY_SEGMENT;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, Direction dir) {
             switch (TypeKind.from(argType)) {
                 case ReferenceType -> {
@@ -632,7 +678,11 @@ enum Transformation {
     /**
      * A boolean value (i.e. C's {@code _Bool} type).
      */
-    BOOL(ValueLayout.JAVA_BOOLEAN) {
+    BOOL {
+        public Class<?> carrier() {
+            return boolean.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             switch (TypeKind.from(argType)) {
                 case BooleanType -> cb.iload(varIdx);
@@ -656,7 +706,11 @@ enum Transformation {
     /**
      * A {@code void} return type or an argument to drop.
      */
-    VOID(null) {
+    VOID {
+        public Class<?> carrier() {
+            return void.class;
+        }
+
         public Consumer<CodeBuilder> applyArgument(final CodeBuilder cb, final int varIdx, final Class<?> argType, final boolean heap, final int arenaVar, final Direction dir) {
             // drop this argument
             return null;
@@ -681,7 +735,11 @@ enum Transformation {
     /**
      * A marker indicating the start of variable arguments.
      */
-    START_VA(null) {
+    START_VA {
+        public Class<?> carrier() {
+            return void.class;
+        }
+
         public void applyOption(final CodeBuilder cb, final int argIdx, final Parameter param) {
             pushInt(cb, argIdx);
             cb.invokestatic(CD_Linker_Option, "firstVariadicArg", MTD_Linker_Option_int, true);
@@ -707,7 +765,11 @@ enum Transformation {
     /**
      * Captured call state.
      */
-    CAPTURE(ValueLayout.ADDRESS) {
+    CAPTURE {
+        public Class<?> carrier() {
+            return LazyLink.MEMORY_SEGMENT;
+        }
+
         public void applyOption(final CodeBuilder cb, final int argIdx, final Parameter param) {
             if (argIdx != 0) {
                 throw new IllegalArgumentException("Capture must be first argument");
@@ -749,11 +811,7 @@ enum Transformation {
         return new IllegalArgumentException("Cannot use transformation " + xform + " with return type " + argType);
     }
 
-    private final ValueLayout layout;
-
-    Transformation(final ValueLayout layout) {
-        this.layout = layout;
-    }
+    Transformation() {}
 
     static Transformation forJavaType(final Class<?> type) {
         return switch (TypeKind.from(type)) {
@@ -764,7 +822,7 @@ enum Transformation {
             case LongType -> S64;
             case DoubleType -> F64;
             case ReferenceType -> {
-                if (type.isArray() || type == MemorySegment.class || type == String.class) {
+                if (type.isArray() || type == LazyLink.MEMORY_SEGMENT || type == String.class) {
                     yield PTR;
                 } else if (NativeEnum.class.isAssignableFrom(type)) {
                     yield S32;
@@ -779,11 +837,9 @@ enum Transformation {
     }
 
     /**
-     * {@return the native-side value layout for this transformation}
+     * {@return the native-side value layout carrier for this transformation}
      */
-    public ValueLayout layout() {
-        return layout;
-    }
+    public abstract Class<?> carrier();
 
     /**
      * Apply the argument for this transformation into a call which is being built.
