@@ -306,8 +306,7 @@ public interface Io {
     //...
 
     @Link
-    @capture("errno")
-    @as(ssize_t) int read(MemorySegment state, int fd, MemorySegment buf, @as(size_t) int count);
+    @as(ssize_t) int read(@capture("errno") MemorySegment state, int fd, MemorySegment buf, @as(size_t) int count);
 
     //...
 }
