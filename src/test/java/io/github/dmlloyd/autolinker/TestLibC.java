@@ -11,7 +11,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -80,8 +80,8 @@ public final class TestLibC {
     }
 
     @Test
-    @Disabled("FFM presently disallows critical+capture")
     public void testCriticalWithCaptureErrno() {
+        Assumptions.assumeTrue(Runtime.version().feature() >= 24, "FFM disallows critical+capture on JDK <24");
         LibCStuff x = autoLinker.autoLink(LibCStuff.class);
         try (Arena arena = Arena.ofConfined()) {
             x.sin(arena.allocate(Linker.Option.captureStateLayout()), 1.0);

@@ -15,6 +15,8 @@
     </parent>
 
     <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.release>22</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <format.skip>true</format.skip>
@@ -39,8 +41,8 @@
     <dependencies>
         <dependency>
             <groupId>io.github.dmlloyd</groupId>
-            <artifactId>jdk-classfile-preview</artifactId>
-            <version>24.beta2</version>
+            <artifactId>jdk-classfile-backport</artifactId>
+            <version>24.beta6</version>
         </dependency>
         <dependency>
             <groupId>io.smallrye.common</groupId>
