@@ -740,8 +740,8 @@ enum Transformation {
             return void.class;
         }
 
-        public void applyOption(final CodeBuilder cb, final int argIdx, final Parameter param) {
-            pushInt(cb, argIdx);
+        public void applyOption(final CodeBuilder cb, final int inputArgIdx, final int outputArgIdx, final Parameter param) {
+            pushInt(cb, outputArgIdx);
             cb.invokestatic(CD_Linker_Option, "firstVariadicArg", MTD_Linker_Option_int, true);
         }
 
@@ -770,8 +770,8 @@ enum Transformation {
             return LazyLink.MEMORY_SEGMENT;
         }
 
-        public void applyOption(final CodeBuilder cb, final int argIdx, final Parameter param) {
-            if (argIdx != 0) {
+        public void applyOption(final CodeBuilder cb, final int inputArgIdx, final int outputArgIdx, final Parameter param) {
+            if (inputArgIdx != 0) {
                 throw new IllegalArgumentException("Capture must be first argument");
             }
             Link.capture captureAnn = param.getAnnotation(Link.capture.class);
@@ -869,11 +869,12 @@ enum Transformation {
     /**
      * Emit code to optionally push an option on to the stack.
      *
-     * @param cb     the code builder (not {@code null})
-     * @param argIdx the argument index
-     * @param param
+     * @param cb           the code builder (not {@code null})
+     * @param inputArgIdx  the method stub argument index
+     * @param outputArgIdx the downcall argument index
+     * @param param        the reflection parameter
      */
-    public void applyOption(CodeBuilder cb, final int argIdx, final Parameter param) {
+    public void applyOption(CodeBuilder cb, int inputArgIdx, int outputArgIdx, Parameter param) {
     }
 
     /**

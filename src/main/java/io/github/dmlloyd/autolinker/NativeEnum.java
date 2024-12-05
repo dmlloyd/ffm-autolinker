@@ -33,6 +33,13 @@ public interface NativeEnum<T extends NativeEnum<T>> {
     int nativeCode();
 
     /**
+     * {@return an all-zero untyped native enum}
+     */
+    static <T extends NativeEnum<T>> NativeEnum<T> zero() {
+        return () -> 0;
+    }
+
+    /**
      * {@return true if this value is equal to zero, or false otherwise}
      */
     default boolean isZero() {

@@ -48,7 +48,7 @@ public final class AutoLinker {
             String simpleName = type.getSimpleName();
             byte[] bytes = compileAutoLinkerFor(type, ClassDesc.of(packageName, simpleName + "$$AutoLinker"));
             try {
-                MethodHandles.Lookup definedLookup = lookup.defineHiddenClass(bytes, true);
+                MethodHandles.Lookup definedLookup = MethodHandles.privateLookupIn(type, lookup).defineHiddenClass(bytes, true);
                 MethodHandle ctor = definedLookup.findConstructor(definedLookup.lookupClass(), MethodType.methodType(void.class));
                 return ctor.invoke();
             } catch (RuntimeException | Error e) {
@@ -187,6 +187,7 @@ public final class AutoLinker {
                     transformations.stream().map(Transformation::carrier).filter(c -> c != void.class).map(Class::describeConstable).map(Optional::orElseThrow).toArray(ClassDesc[]::new)
                 );
                 Link.critical critical = method.getAnnotation(Link.critical.class);
+                Link.va_start variadic = method.getAnnotation(Link.va_start.class);
 
                 // add the bootstrap for the indy
                 int hash = type.hashCode();
@@ -247,17 +248,26 @@ public final class AutoLinker {
                             }
                             // stack: linker fnPtr descriptor
                             // now we just need the options
-                            int optCnt = (critical != null ? 1 : 0) + (int) transformations.stream().filter(Transformation::hasOption).count();
+                            int optCnt = (critical != null ? 1 : 0) + (variadic != null ? 1 : 0) + (int) transformations.stream().filter(Transformation::hasOption).count();
                             pushInt(tb, optCnt);
                             tb.anewarray(CD_Linker_Option);
+                            // this is the option index
                             idx = 0;
+                            // this is the method parameter index
                             int argIdx = 0;
+                            // this is the output parameter index
+                            int outIdx = 0;
                             for (Transformation transformation : transformations) {
                                 if (transformation.hasOption()) {
                                     tb.dup();
-                                    pushInt(tb, idx ++);
-                                    transformation.applyOption(tb, argIdx, parameters[argIdx]);
+                                    pushInt(tb, idx);
+                                    transformation.applyOption(tb, argIdx, outIdx, parameters[argIdx]);
                                     tb.aastore();
+                                    idx ++;
+                                }
+                                // special case: capture does not add an output idx as far as varargs goes
+                                if (transformation.hasLayout()) {
+                                    outIdx++;
                                 }
                                 if (transformation.consumeArgument()) {
                                     argIdx++;
@@ -265,7 +275,7 @@ public final class AutoLinker {
                             }
                             if (critical != null) {
                                 tb.dup();
-                                pushInt(tb, idx);
+                                pushInt(tb, idx ++);
                                 if (critical.heap()) {
                                     tb.iconst_1();
                                 } else {
@@ -274,6 +284,14 @@ public final class AutoLinker {
                                 tb.invokestatic(CD_Linker_Option, "critical", MTD_Linker_Option_boolean, true);
                                 tb.aastore();
                             }
+                            if (variadic != null) {
+                                tb.dup();
+                                pushInt(tb, idx ++);
+                                pushInt(tb, outIdx);
+                                tb.invokestatic(CD_Linker_Option, "firstVariadicArg", MTD_Linker_Option_int, true);
+                                tb.aastore();
+                            }
+                            assert idx == optCnt;
                             // stack: linker fnPtr descriptor options
                             // finally link the function
                             tb.invokeinterface(CD_Linker, "downcallHandle", MTD_MethodHandle_MemorySegment_FunctionDescriptor_Linker_Option_array);

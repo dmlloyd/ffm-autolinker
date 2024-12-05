@@ -41,9 +41,11 @@ public @interface Link {
 
     /**
      * Mark the first variadic argument of a variadic function call.
+     * If given on a method, this indicates that the call is variadic but there are no variadic parameters
+     * in the declaration (used for cases where the target function is variadic to avoid linkage problems).
      */
     @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.PARAMETER)
+    @Target({ElementType.PARAMETER, ElementType.METHOD})
     @interface va_start {}
 
     /**
