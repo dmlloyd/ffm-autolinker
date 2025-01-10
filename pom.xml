@@ -42,7 +42,7 @@
         <dependency>
             <groupId>io.github.dmlloyd</groupId>
             <artifactId>jdk-classfile-backport</artifactId>
-            <version>24.beta7</version>
+            <version>24.cr2</version>
         </dependency>
         <dependency>
             <groupId>io.smallrye.common</groupId>
@@ -97,6 +97,7 @@
                         </goals>
                         <configuration>
                             <release>17</release>
+                            <multiReleaseOutput>false</multiReleaseOutput>
                         </configuration>
                     </execution>
                     <execution>
@@ -107,15 +108,27 @@
                         </goals>
                         <configuration>
                             <release>22</release>
+                            <multiReleaseOutput>false</multiReleaseOutput>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>--enable-native-access=io.github.dmlloyd.autolinker</argLine>
-                </configuration>
+                <version>3.5.2</version>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <phase>test</phase>
+                        <configuration>
+                            <argLine>--enable-native-access=io.github.dmlloyd.autolinker</argLine>
+                            <additionalClasspathElements/>
+                            <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                            <testClassesDirectory>${project.build.testOutputDirectory}</testClassesDirectory>
+                            <useModulePath>true</useModulePath>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
