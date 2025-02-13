@@ -1,6 +1,8 @@
 = FFM Autolinker: A utility for easy integration with the Java FFM API
 
-image:https://img.shields.io/maven-central/v/io.github.dmlloyd.autolinker/ffm-autolinker?color=green[]
+//[![Maven Central](https://img.shields.io/maven-central/v/io.github.dmlloyd/jdk-classfile-backport?color=green)](https://search.maven.org/search?q=g:io.github.dmlloyd%20AND%20a:jdk-classfile-backport)
+
+image:https://img.shields.io/maven-central/v/io.github.dmlloyd/ffm-autolinker?color=green[https://search.maven.org/search?q=g:io.github.dmlloyd%20AND%20a:ffm-autolinker]
 
 == Overview
 
