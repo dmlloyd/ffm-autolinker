@@ -102,13 +102,12 @@
                     </execution>
                     <execution>
                         <id>default-testCompile</id>
-                        <phase>compile</phase>
+                        <phase>test-compile</phase>
                         <goals>
-                            <goal>compile</goal>
+                            <goal>testCompile</goal>
                         </goals>
                         <configuration>
                             <release>22</release>
-                            <multiReleaseOutput>false</multiReleaseOutput>
                         </configuration>
                     </execution>
                 </executions>
